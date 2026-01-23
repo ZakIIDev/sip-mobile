@@ -23,3 +23,9 @@ export type {
   DisclosureInput,
   ImportKeyInput,
 } from "./useViewingKeys"
+export { useBiometrics } from "./useBiometrics"
+export type {
+  BiometricCapabilities,
+  AuthResult,
+  UseBiometricsReturn,
+} from "./useBiometrics"

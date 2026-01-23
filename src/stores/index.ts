@@ -14,3 +14,16 @@ export { usePrivacyStore } from "./privacy"
 // Swap
 export { useSwapStore } from "./swap"
 export type { SwapMode } from "./swap"
+
+// Security
+export {
+  useSecurityStore,
+  getAutoLockMs,
+  formatAutoLockTimeout,
+} from "./security"
+export type {
+  BiometricType,
+  AutoLockTimeout,
+  SecuritySettings,
+  SecurityState,
+} from "./security"
