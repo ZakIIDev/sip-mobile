@@ -18,6 +18,7 @@ import {
   TextInput,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { router } from "expo-router"
 import * as Clipboard from "expo-clipboard"
 import { useState, useCallback } from "react"
 import QRCode from "react-native-qrcode-svg"
@@ -301,6 +302,23 @@ export default function ReceiveScreen() {
               </View>
             </View>
           </View>
+
+          {/* Scan for Payments Button */}
+          <TouchableOpacity
+            className="mt-6 bg-dark-800 border border-dark-700 rounded-xl p-4 flex-row items-center"
+            onPress={() => router.push("/scan")}
+          >
+            <View className="w-10 h-10 bg-brand-900/30 rounded-full items-center justify-center">
+              <Text className="text-lg">🔍</Text>
+            </View>
+            <View className="flex-1 ml-3">
+              <Text className="text-white font-medium">Scan for Payments</Text>
+              <Text className="text-dark-500 text-sm">
+                Check for incoming stealth payments
+              </Text>
+            </View>
+            <Text className="text-dark-600 text-2xl">→</Text>
+          </TouchableOpacity>
 
           {/* How It Works Section */}
           <View className="mt-6 mb-8">
