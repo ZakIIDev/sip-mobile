@@ -10,3 +10,5 @@ export { useWallet, getRecommendedProvider, getAvailableProviders } from "./useW
 // Privacy hooks
 export { useStealth } from "./useStealth"
 export type { StealthKeys, StealthAddress, UseStealthReturn } from "./useStealth"
+export { useSend } from "./useSend"
+export type { SendParams, SendResult, SendStatus, AddressValidation, UseSendReturn } from "./useSend"
