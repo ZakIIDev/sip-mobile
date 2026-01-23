@@ -17,6 +17,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Keyboard,
+  Linking,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
@@ -25,7 +26,15 @@ import { useWalletStore } from "@/stores/wallet"
 import { useSwapStore } from "@/stores/swap"
 import { useSettingsStore } from "@/stores/settings"
 import { useToastStore } from "@/stores/toast"
-import { useBiometrics, useQuote, useInsufficientBalance } from "@/hooks"
+import {
+  useBiometrics,
+  useQuote,
+  useInsufficientBalance,
+  useSwap,
+  getSwapStatusMessage,
+  isSwapInProgress,
+  isSwapComplete,
+} from "@/hooks"
 import { Button, Modal } from "@/components/ui"
 import {
   TOKENS,
@@ -297,6 +306,18 @@ export default function SwapScreen() {
     useState<SwapDirection>("from")
   const [showSlippageModal, setShowSlippageModal] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showExecutingModal, setShowExecutingModal] = useState(false)
+  const [showResultModal, setShowResultModal] = useState(false)
+
+  // Swap execution hook
+  const {
+    status: swapStatus,
+    txSignature,
+    explorerUrl,
+    error: swapError,
+    execute: executeSwap,
+    reset: resetSwap,
+  } = useSwap()
 
   // Quote hook - handles fetching, auto-refresh, and freshness tracking
   const quoteParams = useMemo(
@@ -395,19 +416,45 @@ export default function SwapScreen() {
   }
 
   const confirmSwap = async () => {
+    if (!quote) return
+
     setShowConfirmModal(false)
+    setShowExecutingModal(true)
     Keyboard.dismiss()
 
-    addToast({
-      type: "info",
-      title: isPreviewMode() ? "Preview Mode" : "Swap Submitted",
-      message: isPreviewMode()
-        ? "Swap simulated successfully"
-        : "Your swap is being processed",
+    // Execute the swap
+    const success = await executeSwap({
+      quote,
+      privacyLevel,
     })
 
-    // Reset form
-    setFromAmount("")
+    // Show result modal
+    setShowExecutingModal(false)
+    setShowResultModal(true)
+
+    // Reset form on success
+    if (success) {
+      setFromAmount("")
+    }
+  }
+
+  const handleResultClose = () => {
+    setShowResultModal(false)
+    resetSwap()
+  }
+
+  const handleViewExplorer = async () => {
+    if (explorerUrl) {
+      try {
+        await Linking.openURL(explorerUrl)
+      } catch {
+        addToast({
+          type: "error",
+          title: "Cannot Open Explorer",
+          message: "Unable to open the transaction link",
+        })
+      }
+    }
   }
 
   const canSwap =
@@ -806,6 +853,135 @@ export default function SwapScreen() {
               onPress={confirmSwap}
             >
               <Text className="text-white font-medium">Confirm Swap</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Executing Modal */}
+      <Modal
+        visible={showExecutingModal}
+        onClose={() => {}}
+        title=""
+      >
+        <View className="items-center py-8">
+          <ActivityIndicator size="large" color="#8b5cf6" />
+          <Text className="text-white text-xl font-semibold mt-6">
+            {getSwapStatusMessage(swapStatus, privacyLevel === "shielded")}
+          </Text>
+          <Text className="text-dark-400 text-center mt-2 px-4">
+            {swapStatus === "signing"
+              ? "Please approve the transaction in your wallet"
+              : swapStatus === "submitting"
+                ? privacyLevel === "shielded"
+                  ? "Generating privacy proofs and submitting..."
+                  : "Submitting transaction to the network..."
+                : "Preparing your swap..."}
+          </Text>
+
+          {/* Progress indicator */}
+          <View className="flex-row items-center mt-8 gap-2">
+            <View
+              className={`h-2 w-8 rounded-full ${
+                isSwapInProgress(swapStatus) || isSwapComplete(swapStatus)
+                  ? "bg-brand-500"
+                  : "bg-dark-700"
+              }`}
+            />
+            <View
+              className={`h-2 w-8 rounded-full ${
+                swapStatus === "signing" ||
+                swapStatus === "submitting" ||
+                isSwapComplete(swapStatus)
+                  ? "bg-brand-500"
+                  : "bg-dark-700"
+              }`}
+            />
+            <View
+              className={`h-2 w-8 rounded-full ${
+                swapStatus === "submitting" || isSwapComplete(swapStatus)
+                  ? "bg-brand-500"
+                  : "bg-dark-700"
+              }`}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Result Modal */}
+      <Modal
+        visible={showResultModal}
+        onClose={handleResultClose}
+        title={swapStatus === "success" ? "Swap Complete" : "Swap Failed"}
+      >
+        <View className="items-center py-4">
+          {swapStatus === "success" ? (
+            <>
+              <View className="w-20 h-20 rounded-full bg-green-500/20 items-center justify-center mb-4">
+                <Text className="text-5xl">✓</Text>
+              </View>
+              <Text className="text-white text-xl font-semibold text-center">
+                Successfully swapped!
+              </Text>
+              <View className="flex-row items-center mt-2">
+                <Text className="text-dark-400">
+                  {fromAmount} {fromToken.symbol}
+                </Text>
+                <Text className="text-dark-500 mx-2">→</Text>
+                <Text className="text-green-400">
+                  {quote?.outputAmount ?? "0"} {toToken.symbol}
+                </Text>
+              </View>
+
+              {privacyLevel === "shielded" && (
+                <View className="bg-brand-900/30 px-3 py-1 rounded-full mt-3">
+                  <Text className="text-brand-400 text-sm">🔒 Private Swap</Text>
+                </View>
+              )}
+
+              {txSignature && (
+                <View className="w-full mt-6 px-4">
+                  <Text className="text-dark-500 text-sm mb-1">Transaction</Text>
+                  <Text className="text-dark-400 text-xs font-mono">
+                    {txSignature.slice(0, 20)}...{txSignature.slice(-20)}
+                  </Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <View className="w-20 h-20 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                <Text className="text-5xl">✗</Text>
+              </View>
+              <Text className="text-white text-xl font-semibold text-center">
+                Swap Failed
+              </Text>
+              <Text className="text-red-400 text-center mt-2 px-4">
+                {swapError || "An unexpected error occurred"}
+              </Text>
+            </>
+          )}
+
+          <View className="w-full mt-6 gap-3">
+            {swapStatus === "success" && txSignature && (
+              <TouchableOpacity
+                className="bg-dark-800 py-3 rounded-xl items-center"
+                onPress={handleViewExplorer}
+              >
+                <Text className="text-brand-400 font-medium">
+                  View on Explorer
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              className={`py-3 rounded-xl items-center ${
+                swapStatus === "success" ? "bg-brand-600" : "bg-dark-800"
+              }`}
+              onPress={handleResultClose}
+            >
+              <Text className="text-white font-medium">
+                {swapStatus === "success" ? "Done" : "Close"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
