@@ -2,6 +2,34 @@
  * Utility exports
  */
 
+// Security utilities
+export {
+  SESSION_TIMEOUT_MS,
+  MAX_PIN_ATTEMPTS,
+  PIN_LOCKOUT_MS,
+  SecureStorage,
+  hashString,
+  hashPin,
+  generateRandomHex,
+  generateSessionToken,
+  isValidPin,
+  isValidSolanaAddress,
+  sanitizeInput,
+  maskSensitiveData,
+  isRateLimited,
+  resetRateLimit,
+  getRateLimitRemaining,
+  updateActivity,
+  isSessionExpired,
+  getSessionRemaining,
+  onAppStateChange,
+  isAppInBackground,
+  getSecurityRecommendations,
+  hasSecureHardware,
+  clearSensitiveMemory,
+  secureLogout,
+} from "./security"
+
 // Accessibility utilities
 export {
   MIN_TOUCH_TARGET,

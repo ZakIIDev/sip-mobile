@@ -6,6 +6,10 @@
 
 import { vi, beforeEach } from "vitest"
 
+// Define __DEV__ global for Expo modules
+// @ts-expect-error - __DEV__ is a React Native global
+globalThis.__DEV__ = true
+
 // Mock AsyncStorage
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: {
@@ -25,6 +29,21 @@ vi.mock("expo-secure-store", () => ({
   setItemAsync: vi.fn(() => Promise.resolve()),
   deleteItemAsync: vi.fn(() => Promise.resolve()),
   isAvailableAsync: vi.fn(() => Promise.resolve(true)),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 2,
+}))
+
+// Mock expo-crypto
+vi.mock("expo-crypto", () => ({
+  digestStringAsync: vi.fn((_algorithm, input) =>
+    Promise.resolve("mock_hash_" + input.slice(0, 8))
+  ),
+  getRandomBytesAsync: vi.fn((bytes) =>
+    Promise.resolve(new Uint8Array(bytes).fill(0x42))
+  ),
+  CryptoDigestAlgorithm: {
+    SHA256: "SHA-256",
+    SHA512: "SHA-512",
+  },
 }))
 
 // Mock expo-local-authentication
@@ -119,6 +138,22 @@ vi.mock("react-native", () => ({
     openURL: vi.fn(() => Promise.resolve(true)),
     canOpenURL: vi.fn(() => Promise.resolve(true)),
   },
+  AppState: {
+    currentState: "active",
+    addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+  },
+  AccessibilityInfo: {
+    isScreenReaderEnabled: vi.fn(() => Promise.resolve(false)),
+    isReduceMotionEnabled: vi.fn(() => Promise.resolve(false)),
+    isBoldTextEnabled: vi.fn(() => Promise.resolve(false)),
+    isGrayscaleEnabled: vi.fn(() => Promise.resolve(false)),
+    isInvertColorsEnabled: vi.fn(() => Promise.resolve(false)),
+    isReduceTransparencyEnabled: vi.fn(() => Promise.resolve(false)),
+    addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+    announceForAccessibility: vi.fn(),
+    announceForAccessibilityWithOptions: vi.fn(),
+  },
+  useColorScheme: vi.fn(() => "dark"),
   View: "View",
   Text: "Text",
   TouchableOpacity: "TouchableOpacity",
@@ -127,6 +162,7 @@ vi.mock("react-native", () => ({
   FlatList: "FlatList",
   ActivityIndicator: "ActivityIndicator",
   RefreshControl: "RefreshControl",
+  Pressable: "Pressable",
 }))
 
 // Mock react-native-safe-area-context
