@@ -250,10 +250,7 @@ export default function HomeScreen() {
             icon="🔑"
             label="Keys"
             sublabel="Manage keys"
-            onPress={() => {
-              // TODO: Navigate to viewing keys screen
-              router.push("/(tabs)/settings")
-            }}
+            onPress={() => router.push("/settings/viewing-keys")}
           />
         </View>
 

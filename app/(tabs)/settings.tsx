@@ -1,5 +1,8 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { router } from 'expo-router'
+import { useWalletStore, formatAddress } from '@/stores/wallet'
+import { useViewingKeys } from '@/hooks/useViewingKeys'
 
 type SettingsItemProps = {
   icon: string
@@ -27,6 +30,14 @@ function SettingsItem({ icon, title, subtitle, onPress }: SettingsItemProps) {
 }
 
 export default function SettingsScreen() {
+  const { isConnected, address } = useWalletStore()
+  const { getActiveDisclosures } = useViewingKeys()
+
+  const activeDisclosures = getActiveDisclosures()
+  const disclosureSubtitle = activeDisclosures.length > 0
+    ? `${activeDisclosures.length} active disclosure${activeDisclosures.length !== 1 ? 's' : ''}`
+    : 'Manage disclosure keys'
+
   return (
     <SafeAreaView className="flex-1 bg-dark-950">
       <ScrollView className="flex-1">
@@ -42,18 +53,21 @@ export default function SettingsScreen() {
           <View className="rounded-xl overflow-hidden mx-4">
             <SettingsItem
               icon="👛"
-              title="Connected Wallet"
-              subtitle="Not connected"
+              title="Accounts"
+              subtitle={isConnected ? formatAddress(address) : 'Not connected'}
+              onPress={() => router.push('/settings/accounts')}
             />
             <SettingsItem
               icon="🔑"
               title="Viewing Keys"
-              subtitle="Manage disclosure keys"
+              subtitle={disclosureSubtitle}
+              onPress={() => router.push('/settings/viewing-keys')}
             />
             <SettingsItem
               icon="🔐"
               title="Security"
               subtitle="Biometrics & PIN"
+              onPress={() => router.push('/settings/security')}
             />
           </View>
         </View>

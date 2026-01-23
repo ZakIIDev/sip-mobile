@@ -170,3 +170,53 @@ export interface CreateAccountInput {
   chain: ChainType
   nickname?: string
 }
+
+// ============================================================================
+// VIEWING KEY TYPES
+// ============================================================================
+
+/**
+ * Viewing key disclosure record
+ * Tracks who you've shared your viewing key with
+ */
+export interface ViewingKeyDisclosure {
+  id: string
+  recipientName: string
+  recipientAddress?: string
+  purpose: "compliance" | "audit" | "personal" | "other"
+  note?: string
+  disclosedAt: number
+  expiresAt?: number
+  revoked: boolean
+  revokedAt?: number
+}
+
+/**
+ * Imported viewing key from another user
+ * Allows you to monitor their payments (with their permission)
+ */
+export interface ImportedViewingKey {
+  id: string
+  label: string
+  viewingPublicKey: string
+  viewingPrivateKey: string
+  ownerAddress?: string
+  chain: ChainType
+  importedAt: number
+  lastScannedAt?: number
+  paymentsFound: number
+}
+
+/**
+ * Viewing key export format
+ * For sharing with auditors/compliance
+ */
+export interface ViewingKeyExport {
+  version: number
+  chain: ChainType
+  viewingPublicKey: string
+  viewingPrivateKey: string
+  spendingPublicKey: string
+  exportedAt: number
+  expiresAt?: number
+}

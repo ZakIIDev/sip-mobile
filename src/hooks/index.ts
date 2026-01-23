@@ -16,3 +16,10 @@ export { useScanPayments } from "./useScanPayments"
 export type { ScanResult, ScanProgress, ScanOptions, UseScanPaymentsReturn } from "./useScanPayments"
 export { useClaim } from "./useClaim"
 export type { ClaimResult, ClaimStatus, ClaimProgress, UseClaimReturn } from "./useClaim"
+export { useViewingKeys } from "./useViewingKeys"
+export type {
+  UseViewingKeysReturn,
+  ExportOptions,
+  DisclosureInput,
+  ImportKeyInput,
+} from "./useViewingKeys"
