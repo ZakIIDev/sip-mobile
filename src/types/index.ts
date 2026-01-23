@@ -220,3 +220,55 @@ export interface ViewingKeyExport {
   exportedAt: number
   expiresAt?: number
 }
+
+// ============================================================================
+// TOKEN TYPES
+// ============================================================================
+
+/**
+ * Token information for display
+ */
+export interface TokenInfo {
+  symbol: string
+  name: string
+  mint: string
+  decimals: number
+  logoUri?: string
+  coingeckoId?: string
+}
+
+/**
+ * Token with balance
+ */
+export interface TokenBalance {
+  token: TokenInfo
+  balance: string
+  usdValue?: number
+}
+
+/**
+ * Quote information from DEX
+ */
+export interface SwapQuote {
+  inputToken: TokenInfo
+  outputToken: TokenInfo
+  inputAmount: string
+  outputAmount: string
+  minimumReceived: string
+  priceImpact: number
+  route: string[]
+  fees: {
+    networkFee: string
+    platformFee: string
+  }
+  expiresAt: number
+}
+
+/**
+ * Swap settings
+ */
+export interface SwapSettings {
+  slippageBps: number // basis points (100 = 1%)
+  priorityFee: "low" | "medium" | "high" | "custom"
+  customPriorityFee?: number // in lamports
+}
