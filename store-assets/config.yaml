@@ -1,0 +1,140 @@
+# Solana dApp Store Publishing Configuration
+# Reference: https://docs.solanamobile.com/dapp-publishing/prepare
+
+publisher:
+  name: "SIP Protocol"
+  website: "https://sip-protocol.org"
+  email: "rector@rectorspace.com"
+
+app:
+  name: "SIP Privacy"
+  android_package: "org.sip_protocol.privacy"
+  license_url: "https://github.com/sip-protocol/sip-mobile/blob/main/LICENSE"
+  privacy_policy_url: "https://sip-protocol.org/privacy"
+
+release:
+  version: "0.1.0"
+
+  media:
+    # App Icon - 512x512px
+    icon: "icons/app-icon-512.png"
+
+    # Publisher Icon - 512x512px
+    publisher_icon: "icons/publisher-icon-512.png"
+
+    # Banner Graphic - 1200x600px (Required)
+    banner: "banners/banner-1200x600.png"
+
+    # Feature Graphic - 1200x1200px (Optional, for Editor's Choice)
+    # feature: "banners/feature-1200x1200.png"
+
+    # Screenshots - Minimum 4 required, 1920x1080px recommended
+    screenshots:
+      - "screenshots/01-home-dashboard.png"
+      - "screenshots/02-send-private.png"
+      - "screenshots/03-receive-stealth.png"
+      - "screenshots/04-swap-privacy.png"
+      - "screenshots/05-compliance-audit.png"
+
+    # Video - Optional, 720p minimum, .mp4 format
+    # video: "media/demo-video.mp4"
+
+  catalog:
+    en-US:
+      # Short name - max 30 characters
+      name: "SIP Privacy"
+
+      # Short description - displayed in search results
+      short_description: "Private payments on Solana"
+
+      # Long description - full store listing
+      long_description: |
+        SIP Privacy brings cryptographic privacy to Solana Mobile.
+
+        The privacy standard for Web3 — like HTTPS for the internet. One toggle to shield your transactions using stealth addresses, Pedersen commitments, and viewing keys for compliance.
+
+        FEATURES:
+
+        • Private Payments - Send and receive SOL and tokens with full privacy
+        • Stealth Addresses - One-time recipient addresses prevent transaction linking
+        • Privacy DEX - Swap tokens privately via Jupiter integration
+        • Viewing Keys - Selective disclosure for compliance and auditing
+        • Multi-Wallet Support - Works with Phantom, MWA, and embedded wallets
+
+        PRIVACY LEVELS:
+
+        • Transparent - Standard public transactions
+        • Shielded - Full privacy for sender, amount, and recipient
+        • Compliant - Privacy with viewing key for auditors
+
+        SECURITY:
+
+        • Biometric authentication (Face ID, fingerprint)
+        • Secure key storage with expo-secure-store
+        • No tracking, no analytics, open source
+
+        Built on the Shielded Intents Protocol (SIP) - the privacy middleware for Solana.
+
+        Website: https://sip-protocol.org
+        Docs: https://docs.sip-protocol.org
+        GitHub: https://github.com/sip-protocol
+
+      # What's new in this version
+      new_in_version: |
+        Initial release:
+        • Private payments with stealth addresses
+        • Privacy-enabled DEX swaps via Jupiter
+        • Compliance dashboard with viewing keys
+        • Multi-wallet support (Phantom, MWA, Privy)
+
+solana_mobile_dapp_publisher_portal:
+  # Google Play package name (if published there)
+  google_store_package: ""
+
+  # Testing instructions for reviewers
+  testing_instructions: |
+    TESTING ACCOUNT:
+    No test account needed - app works with any Solana wallet.
+
+    TESTING STEPS:
+
+    1. WALLET CONNECTION
+       - Tap "Connect Wallet" on login screen
+       - Choose your preferred wallet (Phantom recommended for testing)
+       - Approve connection request
+
+    2. RECEIVE PRIVATE PAYMENT
+       - Go to "Receive" tab
+       - Copy the stealth address or show QR code
+       - Send test SOL from another wallet to this address
+
+    3. SCAN FOR PAYMENTS
+       - After receiving, tap "Scan for Payments"
+       - App will find incoming stealth payments
+       - Claim any found payments
+
+    4. SEND PRIVATE PAYMENT
+       - Go to "Send" tab
+       - Enter recipient address
+       - Enter amount
+       - Toggle "Privacy" to enable shielded transfer
+       - Confirm and sign transaction
+
+    5. SWAP WITH PRIVACY
+       - Go to "Swap" tab
+       - Select tokens to swap
+       - Toggle "Privacy" for private swap
+       - Review quote and execute
+
+    6. COMPLIANCE
+       - Go to "Settings" > "Compliance"
+       - View audit trail
+       - Export viewing keys if needed
+
+    DEVNET TESTING:
+    App defaults to devnet. Request devnet SOL from https://faucet.solana.com
+
+  # Authorized testers (wallet addresses)
+  alpha_testers:
+    - address: ""
+      comment: "SIP Protocol team"
