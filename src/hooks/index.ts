@@ -10,6 +10,10 @@ export type {
   UseNativeWalletReturn,
 } from "./useNativeWallet"
 
+// Seed Vault (PRIMARY - Seeker/Saga devices)
+export { useSeedVault } from "./useSeedVault"
+export type { SeedVaultWallet, UseSeedVaultReturn } from "./useSeedVault"
+
 // External Wallet Integration (OPTIONAL)
 export { useMWA } from "./useMWA"
 export { usePhantomDeeplink } from "./usePhantomDeeplink"
