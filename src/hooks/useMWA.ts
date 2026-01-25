@@ -19,6 +19,7 @@ import type {
   WalletError,
   SignedResult,
 } from "@/types"
+import { useSettingsStore } from "@/stores/settings"
 
 const APP_IDENTITY = {
   name: "SIP Protocol",
@@ -50,6 +51,9 @@ export function useMWA(): UseMWAReturn {
   const [status, setStatus] = useState<WalletConnectionStatus>("disconnected")
   const [error, setError] = useState<WalletError | null>(null)
 
+  // Get network from settings
+  const network = useSettingsStore((state) => state.network)
+
   // MWA only available on Android
   const isAvailable = Platform.OS === "android"
 
@@ -72,7 +76,7 @@ export function useMWA(): UseMWAReturn {
       const result = await transact(async (wallet: Web3MobileWallet) => {
         // Authorize with wallet
         const authResult = await wallet.authorize({
-          cluster: "devnet", // TODO: Make configurable
+          cluster: network === "mainnet" ? "mainnet-beta" : "devnet",
           identity: APP_IDENTITY,
         })
 
@@ -117,7 +121,7 @@ export function useMWA(): UseMWAReturn {
       setStatus("error")
       return null
     }
-  }, [isAvailable])
+  }, [isAvailable, network])
 
   const disconnect = useCallback(async (): Promise<void> => {
     if (!isAvailable || !authToken) {

@@ -137,25 +137,39 @@ async function deriveSpendingKeyFromPayment(
  * 1. Transfers funds from the stealth address to the user's wallet
  * 2. Signs with the derived stealth private key
  */
+/**
+ * Build claim transaction
+ *
+ * ============================================================
+ * MOCK TRANSACTION (Anchor infrastructure required)
+ * ============================================================
+ * Real implementation requires:
+ * 1. @coral-xyz/anchor dependency
+ * 2. IDL types from sip-privacy program
+ * 3. PDA derivation for: config, transfer_record, nullifier_record
+ * 4. Proof of stealth address ownership (derived from viewing key)
+ * 5. Nullifier generation to prevent double-claims
+ *
+ * Program: S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at (devnet)
+ * Instruction: claim_transfer / claim_token_transfer
+ * ============================================================
+ */
 async function buildClaimTransaction(
-  payment: PaymentRecord,
+  _payment: PaymentRecord,
   derivedKey: string,
-  destinationAddress: string,
+  _destinationAddress: string,
   _network: string
 ): Promise<{ serialized: Uint8Array; signature: string }> {
-  // TODO: Build actual Solana transaction when on-chain program is ready
-  // For now, simulate the transaction building
-
   // Simulate building delay
   await new Promise((resolve) => setTimeout(resolve, 300))
 
-  // Mock transaction signature (will be real ed25519 sig in production)
+  // Mock signature using derived key
   const mockSig = new Uint8Array(64)
   const derivedKeyBytes = hexToBytes(derivedKey)
   mockSig.set(derivedKeyBytes.slice(0, 32), 0)
 
   return {
-    serialized: new Uint8Array(512).fill(0), // Mock serialized tx
+    serialized: new Uint8Array(512).fill(0),
     signature: Array.from(mockSig.slice(0, 32))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join(""),
@@ -163,9 +177,9 @@ async function buildClaimTransaction(
 }
 
 /**
- * Submit claim transaction to the Solana network
+ * Submit claim transaction to network
  *
- * TODO: Implement real RPC submission when on-chain program is ready
+ * Real: await connection.sendRawTransaction(serializedTx)
  */
 async function submitClaimTransaction(
   _serializedTx: Uint8Array,
@@ -174,15 +188,10 @@ async function submitClaimTransaction(
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 800))
 
-  // Generate mock transaction hash (will be real in production)
-  const mockTxHash = new Uint8Array(32)
-  for (let i = 0; i < 32; i++) {
-    mockTxHash[i] = Math.floor(Math.random() * 256)
-  }
-
-  return Array.from(mockTxHash)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("")
+  // Generate mock transaction hash
+  return `mock_claim_${Date.now()}_${Array.from({ length: 16 }, () =>
+    "0123456789abcdef"[Math.floor(Math.random() * 16)]
+  ).join("")}`
 }
 
 // ============================================================================

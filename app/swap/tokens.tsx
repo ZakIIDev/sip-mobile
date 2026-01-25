@@ -25,9 +25,10 @@ import {
   TOKEN_LIST,
   TOKENS,
   POPULAR_TOKENS,
-  getMockBalance,
   formatTokenAmount,
 } from "@/data/tokens"
+import { useBalance } from "@/hooks"
+import { useWalletStore } from "@/stores/wallet"
 import type { TokenInfo } from "@/types"
 
 // ============================================================================
@@ -146,6 +147,37 @@ export default function TokenSelectorScreen() {
     selected?: string
   }>()
 
+  // Real balance from RPC
+  const { isConnected } = useWalletStore()
+  const { balance: solBalance, tokenBalances, solPrice } = useBalance()
+
+  // Helper to get balance for a token symbol
+  const getTokenBalance = useCallback(
+    (symbol: string): { balance: string; usdValue: number } | undefined => {
+      if (!isConnected) return undefined
+
+      if (symbol === "SOL") {
+        return {
+          balance: solBalance.toFixed(4),
+          usdValue: solBalance * solPrice,
+        }
+      }
+
+      // Find SPL token by mint
+      const tokenInfo = TOKENS[symbol]
+      if (!tokenInfo) return undefined
+
+      const tokenBalance = tokenBalances.find((t) => t.mint === tokenInfo.mint)
+      if (!tokenBalance) return { balance: "0", usdValue: 0 }
+
+      return {
+        balance: tokenBalance.uiAmount.toString(),
+        usdValue: 0,
+      }
+    },
+    [isConnected, solBalance, solPrice, tokenBalances]
+  )
+
   const [searchQuery, setSearchQuery] = useState("")
   const [recentTokens, setRecentTokens] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -203,7 +235,7 @@ export default function TokenSelectorScreen() {
   const tokensWithBalances = useMemo(() => {
     return filteredTokens
       .map((token) => {
-        const balanceInfo = getMockBalance(token.symbol)
+        const balanceInfo = getTokenBalance(token.symbol)
         return {
           token,
           balance: balanceInfo?.balance,
@@ -379,7 +411,7 @@ export default function TokenSelectorScreen() {
                 <View className="mb-2">
                   <SectionHeader title="Recent" />
                   {recentTokenList.map((token) => {
-                    const balanceInfo = getMockBalance(token.symbol)
+                    const balanceInfo = getTokenBalance(token.symbol)
                     return (
                       <TokenRow
                         key={token.symbol}

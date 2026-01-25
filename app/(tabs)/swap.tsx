@@ -21,7 +21,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useWalletStore } from "@/stores/wallet"
 import { useSwapStore } from "@/stores/swap"
 import { useSettingsStore } from "@/stores/settings"
@@ -31,6 +31,7 @@ import {
   useQuote,
   useInsufficientBalance,
   useSwap,
+  useBalance,
   getSwapStatusMessage,
   isSwapInProgress,
   isSwapComplete,
@@ -39,7 +40,6 @@ import { Button, Modal } from "@/components/ui"
 import {
   TOKENS,
   POPULAR_TOKENS,
-  getMockBalance,
   formatTokenAmount,
 } from "@/data/tokens"
 import type { TokenInfo, PrivacyLevel, SwapQuote } from "@/types"
@@ -270,6 +270,37 @@ export default function SwapScreen() {
   const { addToast } = useToastStore()
   const { authenticateForOperation } = useBiometrics()
 
+  // Real balance from RPC
+  const { balance: solBalance, tokenBalances, solPrice } = useBalance()
+
+  // Helper to get balance for a token symbol
+  const getTokenBalance = useCallback(
+    (symbol: string): { balance: string; usdValue: number } | undefined => {
+      if (!isConnected) return undefined
+
+      if (symbol === "SOL") {
+        return {
+          balance: solBalance.toFixed(4),
+          usdValue: solBalance * solPrice,
+        }
+      }
+
+      // Find SPL token by mint
+      const tokenInfo = TOKENS[symbol]
+      if (!tokenInfo) return undefined
+
+      const tokenBalance = tokenBalances.find((t) => t.mint === tokenInfo.mint)
+      if (!tokenBalance) return { balance: "0", usdValue: 0 }
+
+      // Calculate USD value (would need price API for accurate value)
+      return {
+        balance: tokenBalance.uiAmount.toString(),
+        usdValue: 0, // TODO: Fetch token prices from Jupiter
+      }
+    },
+    [isConnected, solBalance, solPrice, tokenBalances]
+  )
+
   // Token state
   const [fromToken, setFromToken] = useState<TokenInfo>(TOKENS.SOL)
   const [toToken, setToToken] = useState<TokenInfo>(TOKENS.USDC)
@@ -347,8 +378,8 @@ export default function SwapScreen() {
   const insufficientBalance = useInsufficientBalance(fromToken.symbol, fromAmount)
 
   // Get balances
-  const fromBalance = getMockBalance(fromToken.symbol)
-  const toBalance = getMockBalance(toToken.symbol)
+  const fromBalance = getTokenBalance(fromToken.symbol)
+  const toBalance = getTokenBalance(toToken.symbol)
 
   // Calculate USD values
   const fromUsdValue = useMemo(() => {
@@ -685,7 +716,7 @@ export default function SwapScreen() {
           <Text className="text-dark-400 text-sm mb-2">Popular tokens</Text>
           {POPULAR_TOKENS.map((symbol) => {
             const token = TOKENS[symbol]
-            const balance = getMockBalance(symbol)
+            const balance = getTokenBalance(symbol)
             const isSelected =
               tokenSelectorDirection === "from"
                 ? fromToken.symbol === symbol

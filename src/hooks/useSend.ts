@@ -243,12 +243,24 @@ export function useSend(): UseSendReturn {
 
         setStatus("signing")
 
-        // Build transaction (mock for now - will be real when on-chain program is ready)
-        // TODO: Build real Solana transaction when sip-privacy program is deployed
+        // ============================================================
+        // MOCK TRANSACTION (Anchor infrastructure required)
+        // ============================================================
+        // Real implementation requires:
+        // 1. @coral-xyz/anchor dependency
+        // 2. IDL types from sip-privacy program
+        // 3. PDA derivation for: config, transfer_record, nullifier
+        // 4. Pedersen commitment generation via @sip-protocol/sdk
+        // 5. ZK proof generation (funding_proof circuit)
+        //
+        // Program: S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at (devnet)
+        // See: sip-protocol/programs/sip-privacy for instruction format
+        // ============================================================
+
+        // Simulate transaction signing (no real tx yet)
         const mockTxBytes = new Uint8Array(512)
         mockTxBytes.fill(0)
 
-        // Sign transaction with wallet
         const signedTx = await signTransaction(mockTxBytes)
         if (!signedTx) {
           throw new Error("Transaction signing rejected")
@@ -256,14 +268,14 @@ export function useSend(): UseSendReturn {
 
         setStatus("submitting")
 
-        // Submit to network (mock for now - will be real RPC submission)
-        // TODO: Submit real transaction when sip-privacy program is deployed
+        // Simulate network delay (no real submission yet)
         await new Promise((resolve) => setTimeout(resolve, 800))
 
-        // Generate transaction hash (mock - will be real hash from RPC)
-        const txHash = Array.from({ length: 64 }, () =>
+        // Generate mock transaction hash
+        // Real: const { signature } = await connection.sendRawTransaction(signedTx)
+        const txHash = `mock_${Date.now()}_${Array.from({ length: 16 }, () =>
           "0123456789abcdef"[Math.floor(Math.random() * 16)]
-        ).join("")
+        ).join("")}`
 
         setTxHash(txHash)
         setStatus("confirmed")

@@ -20,6 +20,7 @@ import type {
   WalletConnectionStatus,
   WalletError,
 } from "@/types"
+import { useSettingsStore } from "@/stores/settings"
 
 // Phantom deeplink URLs
 const PHANTOM_CONNECT_URL = "https://phantom.app/ul/v1/connect"
@@ -148,6 +149,9 @@ export function usePhantomDeeplink(): UsePhantomDeeplinkReturn {
   const [error, setError] = useState<WalletError | null>(null)
   const [isAvailable, setIsAvailable] = useState(false)
 
+  // Get network from settings
+  const network = useSettingsStore((state) => state.network)
+
   // Encryption state - persisted for session duration
   const dappKeyPair = useRef<DappKeyPair | null>(null)
   const phantomSession = useRef<PhantomSession | null>(null)
@@ -249,7 +253,7 @@ export function usePhantomDeeplink(): UsePhantomDeeplinkReturn {
         app_url: "https://sip-protocol.org",
         dapp_encryption_public_key: dappPublicKeyBase58,
         redirect_link: REDIRECT_URL,
-        cluster: "devnet", // TODO: Make configurable via settings
+        cluster: network === "mainnet" ? "mainnet-beta" : "devnet",
       })
 
       // Open Phantom
@@ -333,7 +337,7 @@ export function usePhantomDeeplink(): UsePhantomDeeplinkReturn {
       setStatus("error")
       return null
     }
-  }, [isAvailable])
+  }, [isAvailable, network])
 
   const disconnect = useCallback(async (): Promise<void> => {
     if (!isAvailable || !phantomSession.current || !dappKeyPair.current) {
