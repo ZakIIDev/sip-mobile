@@ -2,7 +2,7 @@
   "expo": {
     "name": "SIP Privacy",
     "slug": "sip-privacy",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "scheme": "sipprotocol",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,6 +23,7 @@
       }
     },
     "android": {
+      "versionCode": 2,
       "package": "org.sip_protocol.privacy",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

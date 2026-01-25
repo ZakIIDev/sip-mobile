@@ -46,6 +46,18 @@ publishing/     # APK builds, dApp Store config
 
 ---
 
+## Versioning (IMPORTANT)
+
+> **Bump version BEFORE every build** — Same version = store won't recognize update.
+
+```bash
+# app.json — increment BOTH before building:
+"version": "0.1.1"              # versionName (human-readable)
+"android": { "versionCode": 2 } # MUST increment for store updates
+```
+
+---
+
 ## Debug Workflow
 
 > **⚠️ NEVER use Expo cloud builds** — Free tier quota limited. Local only.
