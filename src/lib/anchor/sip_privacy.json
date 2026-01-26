@@ -1,0 +1,1438 @@
+{
+  "address": "S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at",
+  "metadata": {
+    "name": "sip_privacy",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "SIP Protocol - Privacy-preserving shielded transfers on Solana"
+  },
+  "instructions": [
+    {
+      "name": "claim_token_transfer",
+      "docs": [
+        "Claim a shielded SPL token transfer",
+        "",
+        "Same as `claim_transfer` but for SPL tokens."
+      ],
+      "discriminator": [
+        138,
+        219,
+        74,
+        179,
+        208,
+        167,
+        239,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "transfer_record",
+          "writable": true
+        },
+        {
+          "name": "nullifier_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  117,
+                  108,
+                  108,
+                  105,
+                  102,
+                  105,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "nullifier"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stealth_account",
+          "docs": [
+            "The stealth account (signer proves ownership)"
+          ],
+          "signer": true
+        },
+        {
+          "name": "recipient",
+          "docs": [
+            "The recipient's main wallet"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "stealth_authority",
+          "docs": [
+            "PDA authority for stealth token account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  101,
+                  97,
+                  108,
+                  116,
+                  104,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "transfer_record"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_mint",
+          "docs": [
+            "The token mint"
+          ]
+        },
+        {
+          "name": "stealth_token_account",
+          "docs": [
+            "Stealth token account holding the tokens"
+          ],
+          "writable": true
+        },
+        {
+          "name": "recipient_token_account",
+          "docs": [
+            "Recipient's token account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nullifier",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "proof",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "claim_transfer",
+      "docs": [
+        "Claim a shielded transfer as the recipient",
+        "",
+        "## Flow",
+        "",
+        "1. Recipient scans announcements with viewing key",
+        "2. Finds transfer addressed to them (can decrypt with viewing key)",
+        "3. Derives stealth private key from ephemeral_pubkey",
+        "4. Signs claim transaction with stealth private key",
+        "5. Proves ownership and claims funds to their main wallet",
+        "",
+        "## Parameters",
+        "",
+        "- `nullifier`: Hash of (transfer_id, stealth_privkey) - prevents double-claims",
+        "- `proof`: ZK proof that claimer knows the stealth private key",
+        "",
+        "## Security",
+        "",
+        "- Nullifier prevents double-spending",
+        "- ZK proof ensures only stealth address owner can claim",
+        "- Transfer record marked as claimed"
+      ],
+      "discriminator": [
+        202,
+        178,
+        58,
+        190,
+        230,
+        234,
+        229,
+        17
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "transfer_record",
+          "writable": true
+        },
+        {
+          "name": "nullifier_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  117,
+                  108,
+                  108,
+                  105,
+                  102,
+                  105,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "nullifier"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stealth_account",
+          "docs": [
+            "The stealth account holding the funds",
+            "Must be a signer (recipient proves ownership via stealth private key)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "recipient",
+          "docs": [
+            "The recipient's main wallet"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nullifier",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "proof",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "docs": [
+        "Initialize the SIP Privacy program configuration",
+        "",
+        "Creates a program-wide config account that stores:",
+        "- Authority (who can update config)",
+        "- Fee settings (optional protocol fee)",
+        "- Pause status (emergency shutdown)"
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "set_paused",
+      "docs": [
+        "Pause or unpause the program (admin only)"
+      ],
+      "discriminator": [
+        91,
+        60,
+        125,
+        192,
+        176,
+        225,
+        166,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "shielded_token_transfer",
+      "docs": [
+        "Execute a shielded SPL token transfer",
+        "",
+        "Same as `shielded_transfer` but for SPL tokens instead of SOL."
+      ],
+      "discriminator": [
+        110,
+        49,
+        231,
+        232,
+        93,
+        141,
+        88,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "transfer_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  110,
+                  115,
+                  102,
+                  101,
+                  114,
+                  95,
+                  114,
+                  101,
+                  99,
+                  111,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sender"
+              },
+              {
+                "kind": "account",
+                "path": "config.total_transfers",
+                "account": "Config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sender",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_mint",
+          "docs": [
+            "The token mint"
+          ]
+        },
+        {
+          "name": "sender_token_account",
+          "docs": [
+            "Sender's token account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "stealth_token_account",
+          "docs": [
+            "Stealth recipient's token account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "fee_token_account",
+          "docs": [
+            "Fee collector's token account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_commitment",
+          "type": {
+            "array": [
+              "u8",
+              33
+            ]
+          }
+        },
+        {
+          "name": "stealth_pubkey",
+          "type": "pubkey"
+        },
+        {
+          "name": "ephemeral_pubkey",
+          "type": {
+            "array": [
+              "u8",
+              33
+            ]
+          }
+        },
+        {
+          "name": "viewing_key_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "encrypted_amount",
+          "type": "bytes"
+        },
+        {
+          "name": "proof",
+          "type": "bytes"
+        },
+        {
+          "name": "actual_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "shielded_transfer",
+      "docs": [
+        "Execute a shielded transfer with hidden amount",
+        "",
+        "## Parameters",
+        "",
+        "- `amount_commitment`: Pedersen commitment to the transfer amount (C = v*G + r*H)",
+        "- `stealth_pubkey`: One-time recipient address derived from recipient's keys",
+        "- `ephemeral_pubkey`: Ephemeral public key for recipient to derive stealth private key",
+        "- `viewing_key_hash`: Hash of recipient's viewing key (for compliance scanning)",
+        "- `encrypted_amount`: Amount encrypted with recipient's viewing key (for their eyes only)",
+        "- `proof`: ZK proof that commitment is valid and amount >= 0",
+        "",
+        "## Security",
+        "",
+        "- Amount is hidden in commitment (only recipient with blinding factor can open)",
+        "- Recipient identity hidden behind stealth address",
+        "- Viewing key allows authorized parties (auditors) to see amount if needed"
+      ],
+      "discriminator": [
+        191,
+        130,
+        5,
+        127,
+        124,
+        187,
+        238,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "transfer_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  110,
+                  115,
+                  102,
+                  101,
+                  114,
+                  95,
+                  114,
+                  101,
+                  99,
+                  111,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sender"
+              },
+              {
+                "kind": "account",
+                "path": "config.total_transfers",
+                "account": "Config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sender",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "stealth_account",
+          "writable": true
+        },
+        {
+          "name": "fee_collector",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_commitment",
+          "type": {
+            "array": [
+              "u8",
+              33
+            ]
+          }
+        },
+        {
+          "name": "stealth_pubkey",
+          "type": "pubkey"
+        },
+        {
+          "name": "ephemeral_pubkey",
+          "type": {
+            "array": [
+              "u8",
+              33
+            ]
+          }
+        },
+        {
+          "name": "viewing_key_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "encrypted_amount",
+          "type": "bytes"
+        },
+        {
+          "name": "proof",
+          "type": "bytes"
+        },
+        {
+          "name": "actual_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_fee",
+      "docs": [
+        "Update fee settings (admin only)"
+      ],
+      "discriminator": [
+        232,
+        253,
+        195,
+        247,
+        148,
+        212,
+        73,
+        222
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "verify_commitment",
+      "docs": [
+        "Verify a Pedersen commitment on-chain",
+        "",
+        "This instruction verifies that a commitment C opens to a specific value.",
+        "",
+        "## Parameters",
+        "",
+        "- `commitment`: The commitment point (33 bytes compressed secp256k1)",
+        "- `value`: The claimed value",
+        "- `blinding`: The blinding factor (32 bytes)",
+        "",
+        "## Returns",
+        "",
+        "Result indicating if verification passed",
+        "",
+        "## Compute Units",
+        "",
+        "Current implementation: ~5,000 CU (format validation only)",
+        "Full EC verification: ~60,000 CU (requires solana-secp256k1)",
+        "",
+        "## Note",
+        "",
+        "This is a utility instruction for testing/debugging.",
+        "In production, commitment verification is integrated into",
+        "shielded_transfer and claim_transfer."
+      ],
+      "discriminator": [
+        174,
+        124,
+        14,
+        57,
+        60,
+        80,
+        196,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Anyone can verify a commitment (no state changes)"
+          ],
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              33
+            ]
+          }
+        },
+        {
+          "name": "value",
+          "type": "u64"
+        },
+        {
+          "name": "blinding",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify_zk_proof",
+      "docs": [
+        "Verify a ZK proof on-chain",
+        "",
+        "Verifies Noir ZK proofs (funding, validity, fulfillment) on Solana.",
+        "",
+        "## Parameters",
+        "",
+        "- `proof_data`: Serialized proof with public inputs",
+        "Format: [proof_type(1)] [num_inputs(4)] [inputs(n*32)] [proof_len(4)] [proof]",
+        "",
+        "## Supported Proof Types",
+        "",
+        "- `0` = Funding: Proves balance >= minimum without revealing balance",
+        "- `1` = Validity: Proves intent authorization without revealing sender",
+        "- `2` = Fulfillment: Proves correct execution without revealing path",
+        "",
+        "## Compute Units",
+        "",
+        "- Funding proof: ~200,000 CU",
+        "- Validity proof: ~350,000 CU",
+        "- Fulfillment proof: ~250,000 CU",
+        "",
+        "## Note",
+        "",
+        "Current implementation performs format validation.",
+        "Full cryptographic verification via Sunspot verifiers coming in M17."
+      ],
+      "discriminator": [
+        251,
+        39,
+        91,
+        14,
+        62,
+        74,
+        223,
+        108
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Anyone can verify a ZK proof (no state changes)",
+            "Pays for compute units"
+          ],
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "proof_data",
+          "type": "bytes"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "NullifierRecord",
+      "discriminator": [
+        56,
+        18,
+        57,
+        175,
+        69,
+        202,
+        189,
+        70
+      ]
+    },
+    {
+      "name": "TransferRecord",
+      "discriminator": [
+        200,
+        31,
+        6,
+        158,
+        240,
+        25,
+        248,
+        53
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ClaimEvent",
+      "discriminator": [
+        93,
+        15,
+        70,
+        170,
+        48,
+        140,
+        212,
+        219
+      ]
+    },
+    {
+      "name": "CommitmentVerifiedEvent",
+      "discriminator": [
+        188,
+        238,
+        189,
+        134,
+        126,
+        106,
+        60,
+        203
+      ]
+    },
+    {
+      "name": "ShieldedTransferEvent",
+      "discriminator": [
+        159,
+        141,
+        158,
+        253,
+        227,
+        123,
+        38,
+        210
+      ]
+    },
+    {
+      "name": "ZkProofVerifiedEvent",
+      "discriminator": [
+        39,
+        243,
+        145,
+        125,
+        121,
+        190,
+        208,
+        251
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "ProgramPaused",
+      "msg": "Program is currently paused"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidCommitment",
+      "msg": "Invalid Pedersen commitment format"
+    },
+    {
+      "code": 6002,
+      "name": "ProofTooLarge",
+      "msg": "ZK proof is too large"
+    },
+    {
+      "code": 6003,
+      "name": "EncryptedAmountTooLarge",
+      "msg": "Encrypted amount data is too large"
+    },
+    {
+      "code": 6004,
+      "name": "ProofVerificationFailed",
+      "msg": "ZK proof verification failed"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "Unauthorized action"
+    },
+    {
+      "code": 6006,
+      "name": "FeeTooHigh",
+      "msg": "Fee exceeds maximum allowed (10%)"
+    },
+    {
+      "code": 6007,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadyClaimed",
+      "msg": "Transfer already claimed"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidStealthProof",
+      "msg": "Invalid stealth address proof"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidProofFormat",
+      "msg": "Invalid proof format"
+    },
+    {
+      "code": 6011,
+      "name": "UnsupportedProofType",
+      "msg": "Unsupported proof type"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidPublicInputs",
+      "msg": "Invalid public inputs"
+    }
+  ],
+  "types": [
+    {
+      "name": "ClaimEvent",
+      "docs": [
+        "Emitted when a transfer is claimed"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "transfer_id",
+            "docs": [
+              "Transfer record that was claimed"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "nullifier",
+            "docs": [
+              "Nullifier (prevents double-claim)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recipient",
+            "docs": [
+              "Recipient who claimed the funds"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "Timestamp when claimed"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitmentVerifiedEvent",
+      "docs": [
+        "Emitted when a commitment is verified"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "commitment",
+            "docs": [
+              "The commitment that was verified"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                33
+              ]
+            }
+          },
+          {
+            "name": "value",
+            "docs": [
+              "The claimed value"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "verified",
+            "docs": [
+              "Whether verification passed"
+            ],
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "docs": [
+        "Program configuration"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Program authority (can pause, update fees)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "docs": [
+              "Protocol fee in basis points (100 = 1%)"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Whether program is paused"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "total_transfers",
+            "docs": [
+              "Total number of transfers (used for unique PDAs)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "NullifierRecord",
+      "docs": [
+        "Nullifier record to prevent double-claims",
+        "",
+        "A nullifier is a deterministic hash derived from the transfer and recipient's",
+        "private key. Once a nullifier is \"spent\" (stored on-chain), the transfer",
+        "cannot be claimed again.",
+        "",
+        "Nullifier = hash(transfer_id || stealth_privkey)"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nullifier",
+            "docs": [
+              "The nullifier hash (32 bytes)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "transfer_record",
+            "docs": [
+              "The transfer record this nullifier corresponds to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "claimed_at",
+            "docs": [
+              "Timestamp when claimed"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShieldedTransferEvent",
+      "docs": [
+        "Emitted when a shielded transfer is created"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sender",
+            "docs": [
+              "Sender's public key"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "stealth_recipient",
+            "docs": [
+              "Stealth recipient address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_commitment",
+            "docs": [
+              "Pedersen commitment to amount"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                33
+              ]
+            }
+          },
+          {
+            "name": "ephemeral_pubkey",
+            "docs": [
+              "Ephemeral public key"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                33
+              ]
+            }
+          },
+          {
+            "name": "viewing_key_hash",
+            "docs": [
+              "Hash of viewing key"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "Block timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "transfer_id",
+            "docs": [
+              "Transfer record PDA"
+            ],
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TransferRecord",
+      "docs": [
+        "Record of a shielded transfer"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sender",
+            "docs": [
+              "Original sender (may be hidden in future versions)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "stealth_recipient",
+            "docs": [
+              "Stealth recipient address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_commitment",
+            "docs": [
+              "Pedersen commitment to the amount: C = v*G + r*H"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                33
+              ]
+            }
+          },
+          {
+            "name": "ephemeral_pubkey",
+            "docs": [
+              "Ephemeral public key for stealth address derivation"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                33
+              ]
+            }
+          },
+          {
+            "name": "viewing_key_hash",
+            "docs": [
+              "Hash of recipient's viewing key (for compliance scanning)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "encrypted_amount",
+            "docs": [
+              "Amount encrypted with viewing key (XChaCha20-Poly1305)"
+            ],
+            "type": "bytes"
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "Unix timestamp of transfer"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "claimed",
+            "docs": [
+              "Whether funds have been claimed"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "token_mint",
+            "docs": [
+              "Token mint (None for SOL transfers)"
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ZkProofVerifiedEvent",
+      "docs": [
+        "Emitted when a ZK proof is verified"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proof_type",
+            "docs": [
+              "Proof type (0=funding, 1=validity, 2=fulfillment)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "public_input_count",
+            "docs": [
+              "Number of public inputs"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "proof_size",
+            "docs": [
+              "Proof size in bytes"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "verified",
+            "docs": [
+              "Whether verification passed"
+            ],
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ]
+}

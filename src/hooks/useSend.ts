@@ -12,10 +12,16 @@ import { useSettingsStore } from "@/stores/settings"
 import { useNativeWallet } from "./useNativeWallet"
 import { useBalance } from "./useBalance"
 import type { PrivacyLevel } from "@/types"
+import type { Transaction as SolanaTransaction } from "@solana/web3.js"
 import {
   generateStealthAddress,
   parseStealthMetaAddress,
+  hexToBytes,
 } from "@/lib/stealth"
+import {
+  getSipPrivacyClient,
+  type ShieldedTransferParams,
+} from "@/lib/anchor"
 
 // ============================================================================
 // TYPES
@@ -237,68 +243,123 @@ export function useSend(): UseSendReturn {
 
           // Generate one-time stealth address
           const { stealthAddress } = await generateStealthAddress(metaAddress)
-          recipientAddress = stealthAddress.address
+
+          // Convert hex address to base58 for Solana
+          const bs58 = await import("bs58")
+          const addressBytes = hexToBytes(stealthAddress.address)
+          recipientAddress = bs58.default.encode(addressBytes)
+
           stealthData = { ephemeralPubKey: stealthAddress.ephemeralPublicKey }
         }
 
         setStatus("signing")
 
-        // ============================================================
-        // MOCK TRANSACTION (Anchor infrastructure required)
-        // ============================================================
-        // Real implementation requires:
-        // 1. @coral-xyz/anchor dependency
-        // 2. IDL types from sip-privacy program
-        // 3. PDA derivation for: config, transfer_record, nullifier
-        // 4. Pedersen commitment generation via @sip-protocol/sdk
-        // 5. ZK proof generation (funding_proof circuit)
-        //
-        // Program: S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at (devnet)
-        // See: sip-protocol/programs/sip-privacy for instruction format
-        // ============================================================
-
-        // Create a simple transfer transaction for signing test
-        // Note: This is a mock that creates a real signable transaction
-        const { Transaction, SystemProgram, PublicKey, Connection, LAMPORTS_PER_SOL } = await import("@solana/web3.js")
+        // Setup connection
+        const { Connection, PublicKey } = await import("@solana/web3.js")
 
         const connection = new Connection(
           network === "mainnet"
             ? "https://api.mainnet-beta.solana.com"
-            : "https://api.devnet.solana.com"
+            : "https://api.devnet.solana.com",
+          { commitment: "confirmed" }
         )
 
         const fromPubkey = new PublicKey(walletAddress)
-        const toPubkey = new PublicKey(recipientAddress)
-        const lamports = Math.floor(parseFloat(params.amount) * LAMPORTS_PER_SOL)
+        let txHash: string
 
-        const transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey,
-            toPubkey,
-            lamports,
+        // Use shielded transfer for stealth addresses, regular transfer otherwise
+        if (addressValidation.type === "stealth" && stealthData) {
+          // Parse stealth meta-address to get keys for encryption
+          const metaAddress = parseStealthMetaAddress(params.recipient)
+          if (!metaAddress) {
+            throw new Error("Invalid stealth address format")
+          }
+
+          // Get SIP Privacy client
+          const client = getSipPrivacyClient(connection)
+
+          // Build shielded transfer parameters
+          const transferParams: ShieldedTransferParams = {
+            amount: parseFloat(params.amount),
+            stealthPubkey: new PublicKey(recipientAddress),
+            recipientSpendingKey: hexToBytes(metaAddress.spendingKey),
+            recipientViewingKey: hexToBytes(metaAddress.viewingKey),
+            memo: params.memo,
+          }
+
+          // Build the shielded transfer transaction
+          const { transaction, transferRecord } =
+            await client.buildShieldedTransfer(fromPubkey, transferParams)
+
+          // Sign the transaction
+          const signedTx = await signTransaction(transaction)
+          if (!signedTx) {
+            throw new Error("Transaction signing rejected")
+          }
+
+          // Ensure we have a Transaction (not VersionedTransaction)
+          const { Transaction } = await import("@solana/web3.js")
+          if (!(signedTx instanceof Transaction)) {
+            throw new Error("Expected legacy Transaction, got VersionedTransaction")
+          }
+
+          setStatus("submitting")
+
+          // Send the transaction
+          try {
+            txHash = await client.sendTransaction(signedTx as SolanaTransaction)
+            console.log("Shielded transfer confirmed:", txHash)
+            console.log("Transfer record PDA:", transferRecord.toBase58())
+          } catch (sendErr) {
+            // If program not initialized, fall back to regular transfer
+            console.warn("Shielded transfer failed, using regular transfer:", sendErr)
+            throw new Error(
+              sendErr instanceof Error
+                ? sendErr.message
+                : "Shielded transfer failed"
+            )
+          }
+        } else {
+          // Regular SOL transfer for non-stealth addresses
+          const { Transaction, SystemProgram, LAMPORTS_PER_SOL } = await import("@solana/web3.js")
+
+          const toPubkey = new PublicKey(recipientAddress)
+          const lamports = Math.floor(parseFloat(params.amount) * LAMPORTS_PER_SOL)
+
+          const transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey,
+              toPubkey,
+              lamports,
+            })
+          )
+
+          // Get recent blockhash
+          const { blockhash } = await connection.getLatestBlockhash()
+          transaction.recentBlockhash = blockhash
+          transaction.feePayer = fromPubkey
+
+          const signedTx = await signTransaction(transaction)
+          if (!signedTx) {
+            throw new Error("Transaction signing rejected")
+          }
+
+          setStatus("submitting")
+
+          // Send the transaction
+          const signature = await connection.sendRawTransaction(signedTx.serialize())
+
+          // Wait for confirmation
+          const { blockhash: confirmBlockhash, lastValidBlockHeight } =
+            await connection.getLatestBlockhash()
+          await connection.confirmTransaction({
+            signature,
+            blockhash: confirmBlockhash,
+            lastValidBlockHeight,
           })
-        )
 
-        // Get recent blockhash
-        const { blockhash } = await connection.getLatestBlockhash()
-        transaction.recentBlockhash = blockhash
-        transaction.feePayer = fromPubkey
-
-        const signedTx = await signTransaction(transaction)
-        if (!signedTx) {
-          throw new Error("Transaction signing rejected")
+          txHash = signature
         }
-
-        setStatus("submitting")
-
-        // Simulate network delay (no real submission yet)
-        await new Promise((resolve) => setTimeout(resolve, 800))
-
-        // Generate mock transaction hash
-        // Real: const { signature } = await connection.sendRawTransaction(signedTx)
-        const txHash = `mock_${Date.now()}_${Array.from({ length: 16 }, () =>
-          "0123456789abcdef"[Math.floor(Math.random() * 16)]
-        ).join("")}`
 
         setTxHash(txHash)
         setStatus("confirmed")
@@ -324,7 +385,7 @@ export function useSend(): UseSendReturn {
         return { success: false, error: errorMessage }
       }
     },
-    [isConnected, walletAddress, balance, signTransaction, validateAddress, validateAmount, addPayment]
+    [isConnected, walletAddress, balance, network, signTransaction, validateAddress, validateAmount, addPayment]
   )
 
   const reset = useCallback(() => {
