@@ -1,14 +1,15 @@
 /**
  * Wallet Provider
  *
- * Simple provider wrapper for wallet context.
+ * Initializes the native wallet on app start.
  * The app uses native wallet management (useNativeWallet) as the primary method.
  *
- * Note: Privy was removed in #71. This provider now just passes through children.
+ * Note: Privy was removed in #71.
  * External wallets (MWA, Phantom) use hooks directly without a provider wrapper.
  */
 
 import { ReactNode } from "react"
+import { useNativeWallet } from "@/hooks"
 
 interface WalletProviderProps {
   children: ReactNode
@@ -17,12 +18,16 @@ interface WalletProviderProps {
 /**
  * WalletProvider
  *
- * This is now a simple pass-through since we removed Privy.
- * Native wallet uses SecureStore directly via useNativeWallet.
- * External wallets (MWA, Phantom) are handled by their respective hooks.
+ * Initializes the native wallet by calling useNativeWallet() on mount.
+ * This triggers the hook's initialization logic which:
+ * 1. Checks if a wallet exists in SecureStore
+ * 2. Loads the public key
+ * 3. Connects to the main wallet store
  */
 export function WalletProvider({ children }: WalletProviderProps) {
-  // No wrapper needed - native wallet uses SecureStore directly
-  // MWA and Phantom use their own hooks without provider context
+  // Initialize native wallet on app start
+  // This loads existing wallet from SecureStore and connects to wallet store
+  useNativeWallet()
+
   return <>{children}</>
 }

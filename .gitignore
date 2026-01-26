@@ -42,3 +42,4 @@ yarn-error.*
 
 # Coverage
 coverage/
+build-latest.apk

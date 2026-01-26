@@ -209,10 +209,16 @@ export function useStealth(): UseStealthReturn {
   }, [keys])
 
   const formatForDisplay = useCallback((addr: StealthAddress): string => {
-    // Truncate for display
-    const spendingShort = `${addr.spendingKey.slice(0, 10)}...${addr.spendingKey.slice(-6)}`
-    const viewingShort = `${addr.viewingKey.slice(0, 10)}...${addr.viewingKey.slice(-6)}`
-    return `sip:${addr.chain}:${spendingShort}:${viewingShort}`
+    // Use the full address which is already properly formatted (base58 for Solana)
+    // Truncate the keys portion for display
+    const parts = addr.full.split(":")
+    if (parts.length === 4) {
+      const [prefix, chain, spending, viewing] = parts
+      const spendingShort = `${spending.slice(0, 8)}...${spending.slice(-6)}`
+      const viewingShort = `${viewing.slice(0, 8)}...${viewing.slice(-6)}`
+      return `${prefix}:${chain}:${spendingShort}:${viewingShort}`
+    }
+    return addr.full
   }, [])
 
   return useMemo(

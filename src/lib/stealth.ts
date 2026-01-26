@@ -316,13 +316,29 @@ export function deriveStealthPrivateKey(
 /**
  * Format a stealth meta-address for display
  * Format: sip:<chain>:<spendingKey>:<viewingKey>
+ *
+ * For Solana, keys are encoded in base58.
+ * For EVM chains, keys use 0x hex prefix.
  */
 export function formatStealthMetaAddress(metaAddress: StealthMetaAddress): string {
-  return `sip:${metaAddress.chain}:${metaAddress.spendingKey}:${metaAddress.viewingKey}`
+  const { chain, spendingKey, viewingKey } = metaAddress
+
+  // Use base58 for Solana, hex for EVM
+  if (chain === "solana") {
+    const spendingBase58 = bs58.encode(hexToBytes(spendingKey))
+    const viewingBase58 = bs58.encode(hexToBytes(viewingKey))
+    return `sip:${chain}:${spendingBase58}:${viewingBase58}`
+  }
+
+  // EVM chains use hex with 0x prefix
+  return `sip:${chain}:${spendingKey}:${viewingKey}`
 }
 
 /**
  * Parse a stealth meta-address string
+ *
+ * For Solana, keys are base58 encoded.
+ * For EVM chains, keys are hex with 0x prefix.
  */
 export function parseStealthMetaAddress(addressStr: string): StealthMetaAddress | null {
   if (!addressStr.startsWith("sip:")) {
@@ -336,6 +352,22 @@ export function parseStealthMetaAddress(addressStr: string): StealthMetaAddress 
 
   const [chain, spendingKey, viewingKey] = parts
 
+  // Convert base58 to hex for Solana
+  if (chain === "solana") {
+    try {
+      const spendingHex = `0x${bytesToHex(bs58.decode(spendingKey))}`
+      const viewingHex = `0x${bytesToHex(bs58.decode(viewingKey))}`
+      return {
+        chain,
+        spendingKey: spendingHex,
+        viewingKey: viewingHex,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  // EVM chains already have hex keys
   return {
     chain,
     spendingKey,
