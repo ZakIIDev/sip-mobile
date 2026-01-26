@@ -238,6 +238,10 @@ export async function getSolPriceJupiter(): Promise<PriceData | null> {
     // SOL mint address
     const SOL_MINT = "So11111111111111111111111111111111111111112"
     const response = await fetch(`${JUPITER_PRICE_API}?ids=${SOL_MINT}`)
+    if (!response.ok) {
+      console.warn(`Jupiter API returned ${response.status}`)
+      return null
+    }
     const data = await response.json()
 
     if (data.data?.[SOL_MINT]?.price) {

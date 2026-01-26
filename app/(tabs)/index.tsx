@@ -247,9 +247,9 @@ export default function HomeScreen() {
               <Text className="text-dark-500 mt-1">Connect wallet to view</Text>
               <TouchableOpacity
                 className="mt-4 bg-brand-600 rounded-xl py-3 items-center"
-                onPress={() => router.push("/(auth)/login")}
+                onPress={() => router.push("/(auth)/wallet-setup" as any)}
               >
-                <Text className="text-white font-semibold">Connect Wallet</Text>
+                <Text className="text-white font-semibold">Set Up Wallet</Text>
               </TouchableOpacity>
             </>
           )}

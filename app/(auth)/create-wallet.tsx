@@ -36,7 +36,7 @@ export default function CreateWalletScreen() {
   const [step, setStep] = useState<Step>("generate")
   const [mnemonic, setMnemonic] = useState<string[]>([])
   const [copied, setCopied] = useState(false)
-  const [generateError, setGenerateError] = useState(false)
+  const [, setGenerateError] = useState(false)
 
   // Verification state
   const [verifyIndices, setVerifyIndices] = useState<number[]>([])
@@ -309,7 +309,7 @@ export default function CreateWalletScreen() {
   // Complete step
   return (
     <SafeAreaView className="flex-1 bg-dark-950 items-center justify-center px-6">
-      <View className="items-center">
+      <View className="items-center w-full">
         {/* Success Icon */}
         <View className="w-24 h-24 rounded-full bg-green-500/20 items-center justify-center mb-6">
           <Text className="text-5xl">✓</Text>

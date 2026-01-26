@@ -37,9 +37,22 @@ import {
   clearSensitiveData,
   type KeyStorageError,
 } from "@/utils/keyStorage"
+import { useWalletStore } from "@/stores/wallet"
 
 // Solana derivation path (BIP44)
 const SOLANA_DERIVATION_PATH = "m/44'/501'/0'/0'"
+
+/**
+ * Connect native wallet to the main wallet store
+ */
+function connectToWalletStore(publicKeyBase58: string): void {
+  useWalletStore.getState().connect(
+    "native",
+    "solana",
+    publicKeyBase58,
+    "native"
+  )
+}
 
 export interface NativeWallet {
   publicKey: PublicKey
@@ -137,6 +150,8 @@ export function useNativeWallet(): UseNativeWalletReturn {
             setWallet({
               publicKey: new PublicKey(publicKeyBase58),
             })
+            // Connect to main wallet store
+            connectToWalletStore(publicKeyBase58)
           }
         }
 
@@ -193,6 +208,9 @@ export function useNativeWallet(): UseNativeWalletReturn {
         }
 
         setWallet(newWallet)
+
+        // Connect to main wallet store
+        connectToWalletStore(publicKeyBase58)
 
         // Clear keypair from memory
         clearSensitiveData(keypair.secretKey)
@@ -253,6 +271,9 @@ export function useNativeWallet(): UseNativeWalletReturn {
         }
 
         setWallet(newWallet)
+
+        // Connect to main wallet store
+        connectToWalletStore(publicKeyBase58)
 
         // Clear keypair from memory
         clearSensitiveData(keypair.secretKey)
@@ -333,6 +354,9 @@ export function useNativeWallet(): UseNativeWalletReturn {
 
         setWallet(newWallet)
 
+        // Connect to main wallet store
+        connectToWalletStore(publicKeyBase58)
+
         // Clear sensitive data
         clearSensitiveData(secretKey)
         clearSensitiveData(keypair.secretKey)
@@ -396,6 +420,9 @@ export function useNativeWallet(): UseNativeWalletReturn {
 
       await deleteWalletStorage()
       setWallet(null)
+
+      // Disconnect from main wallet store
+      useWalletStore.getState().disconnect()
     } catch (err) {
       const walletError = err as NativeWalletError
       setError(walletError)
