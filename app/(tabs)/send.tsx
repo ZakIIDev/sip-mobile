@@ -28,6 +28,7 @@ import { useWalletStore } from "@/stores/wallet"
 import { useSettingsStore } from "@/stores/settings"
 import { useToastStore } from "@/stores/toast"
 import { useBalance } from "@/hooks/useBalance"
+import { getProviderInfo } from "@/privacy-providers"
 import { Button, Modal, EmptyState } from "@/components/ui"
 import type { PrivacyLevel } from "@/types"
 
@@ -44,7 +45,8 @@ export default function SendScreen() {
     getUsdValue,
   } = useSend()
   const { isConnected } = useWalletStore()
-  const { defaultPrivacyLevel } = useSettingsStore()
+  const { defaultPrivacyLevel, privacyProvider } = useSettingsStore()
+  const providerInfo = getProviderInfo(privacyProvider)
   const { addToast } = useToastStore()
   const { balance } = useBalance()
 
@@ -431,6 +433,17 @@ export default function SendScreen() {
             <View className="flex-row justify-between">
               <Text className="text-dark-500">Network Fee</Text>
               <Text className="text-dark-300">~0.00001 SOL</Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-dark-500">Provider</Text>
+              <View className="flex-row items-center">
+                <Text className="text-dark-300">{providerInfo?.name || 'SIP Native'}</Text>
+                {providerInfo?.status === 'coming-soon' && (
+                  <View className="ml-2 px-1.5 py-0.5 bg-yellow-900/30 rounded">
+                    <Text className="text-yellow-400 text-xs">Soon</Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
 

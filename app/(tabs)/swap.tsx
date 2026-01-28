@@ -26,6 +26,7 @@ import { useWalletStore } from "@/stores/wallet"
 import { useSwapStore } from "@/stores/swap"
 import { useSettingsStore } from "@/stores/settings"
 import { useToastStore } from "@/stores/toast"
+import { getProviderInfo } from "@/privacy-providers"
 import {
   useBiometrics,
   useQuote,
@@ -338,7 +339,8 @@ export default function SwapScreen() {
   }>()
   const { isConnected } = useWalletStore()
   const { isPreviewMode } = useSwapStore()
-  const { slippage: storedSlippage, network, setNetwork } = useSettingsStore()
+  const { slippage: storedSlippage, network, setNetwork, privacyProvider } = useSettingsStore()
+  const providerInfo = getProviderInfo(privacyProvider)
   const { addToast } = useToastStore()
   const { authenticateForOperation } = useBiometrics()
 
@@ -956,7 +958,7 @@ export default function SwapScreen() {
               <Text className="text-dark-400">Network Fee</Text>
               <Text className="text-white">{quote?.fees.networkFee ?? "0.000005"} SOL</Text>
             </View>
-            <View className="flex-row justify-between">
+            <View className="flex-row justify-between mb-2">
               <Text className="text-dark-400">Privacy</Text>
               <Text
                 className={
@@ -965,6 +967,17 @@ export default function SwapScreen() {
               >
                 {privacyLevel === "shielded" ? "🔒 Shielded" : "🔓 Public"}
               </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-dark-400">Provider</Text>
+              <View className="flex-row items-center">
+                <Text className="text-white">{providerInfo?.name || 'SIP Native'}</Text>
+                {providerInfo?.status === 'coming-soon' && (
+                  <View className="ml-2 px-1.5 py-0.5 bg-yellow-900/30 rounded">
+                    <Text className="text-yellow-400 text-xs">Soon</Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
 
