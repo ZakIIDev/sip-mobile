@@ -28,7 +28,7 @@ import { useWalletStore } from "@/stores/wallet"
 import { useSettingsStore } from "@/stores/settings"
 import { useToastStore } from "@/stores/toast"
 import { useBalance } from "@/hooks/useBalance"
-import { Button, Modal } from "@/components/ui"
+import { Button, Modal, EmptyState } from "@/components/ui"
 import type { PrivacyLevel } from "@/types"
 
 export default function SendScreen() {
@@ -174,15 +174,15 @@ export default function SendScreen() {
   if (!isConnected) {
     return (
       <SafeAreaView className="flex-1 bg-dark-950">
-        <View className="flex-1 px-6 pt-6 items-center justify-center">
-          <Text className="text-6xl mb-4">💸</Text>
-          <Text className="text-xl font-bold text-white mb-2">
-            Connect Wallet
-          </Text>
-          <Text className="text-dark-400 text-center">
-            Connect your wallet to send SOL privately
-          </Text>
-        </View>
+        <EmptyState
+          title="Connect Wallet"
+          message="Connect your wallet to send SOL privately"
+          icon="wallet-outline"
+          iconColor="#8b5cf6"
+          actionLabel="Set Up Wallet"
+          onAction={() => router.push("/(auth)/wallet-setup" as any)}
+          className="flex-1"
+        />
       </SafeAreaView>
     )
   }

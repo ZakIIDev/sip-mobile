@@ -14,8 +14,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Share,
-  ActivityIndicator,
   TextInput,
+  ActivityIndicator,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -26,7 +26,7 @@ import { useStealth } from "@/hooks/useStealth"
 import { useWalletStore } from "@/stores/wallet"
 import { usePrivacyStore } from "@/stores/privacy"
 import { useToastStore } from "@/stores/toast"
-import { Button, ConfirmModal } from "@/components/ui"
+import { Button, ConfirmModal, LoadingState, ErrorState, EmptyState } from "@/components/ui"
 
 type Tab = "address" | "amount"
 
@@ -134,15 +134,15 @@ export default function ReceiveScreen() {
   if (!isConnected) {
     return (
       <SafeAreaView className="flex-1 bg-dark-950">
-        <View className="flex-1 px-6 pt-6 items-center justify-center">
-          <Text className="text-6xl mb-4">🔐</Text>
-          <Text className="text-xl font-bold text-white mb-2">
-            Connect Wallet
-          </Text>
-          <Text className="text-dark-400 text-center">
-            Connect your wallet to generate a stealth address
-          </Text>
-        </View>
+        <EmptyState
+          title="Connect Wallet"
+          message="Connect your wallet to generate a stealth address"
+          icon="wallet-outline"
+          iconColor="#8b5cf6"
+          actionLabel="Set Up Wallet"
+          onAction={() => router.push("/(auth)/wallet-setup" as any)}
+          className="flex-1"
+        />
       </SafeAreaView>
     )
   }
@@ -150,10 +150,7 @@ export default function ReceiveScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-dark-950">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#8b5cf6" />
-          <Text className="text-dark-400 mt-4">Loading stealth address...</Text>
-        </View>
+        <LoadingState message="Loading stealth address..." />
       </SafeAreaView>
     )
   }
@@ -161,12 +158,12 @@ export default function ReceiveScreen() {
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-dark-950">
-        <View className="flex-1 px-6 items-center justify-center">
-          <Text className="text-6xl mb-4">⚠️</Text>
-          <Text className="text-xl font-bold text-red-400 mb-2">Error</Text>
-          <Text className="text-dark-400 text-center mb-6">{error}</Text>
-          <Button onPress={handleRegenerate}>Try Again</Button>
-        </View>
+        <ErrorState
+          title="Failed to Load"
+          message={error}
+          onRetry={handleRegenerate}
+          className="flex-1"
+        />
       </SafeAreaView>
     )
   }
