@@ -5,6 +5,9 @@
  * Uses DKSAP (Dual-Key Stealth Address Protocol) with ed25519 curve.
  *
  * Based on EIP-5564 style stealth addresses adapted for Solana.
+ *
+ * IMPORTANT: Keys are NEVER deleted - only archived when regenerated.
+ * This prevents fund loss from orphaned payments. (#72)
  */
 
 import { useState, useCallback, useEffect, useMemo } from "react"
@@ -16,17 +19,17 @@ import {
   ed25519PublicKeyToSolanaAddress,
   type StealthMetaAddress,
 } from "@/lib/stealth"
+import type {
+  StealthKeys,
+  StealthKeysRecord,
+  StealthKeysStorage,
+} from "@/types"
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface StealthKeys {
-  spendingPrivateKey: string
-  spendingPublicKey: string
-  viewingPrivateKey: string
-  viewingPublicKey: string
-}
+export type { StealthKeys } from "@/types"
 
 export interface StealthAddress {
   full: string
@@ -40,6 +43,7 @@ export interface StealthAddress {
 export interface UseStealthReturn {
   // State
   stealthAddress: StealthAddress | null
+  activeKeyId: string | null
   isGenerating: boolean
   isLoading: boolean
   error: string | null
@@ -48,6 +52,7 @@ export interface UseStealthReturn {
   generateNewAddress: () => Promise<StealthAddress | null>
   regenerateAddress: () => Promise<StealthAddress | null>
   getKeys: () => Promise<StealthKeys | null>
+  getActiveKeyId: () => string | null
   formatForDisplay: (address: StealthAddress) => string
 }
 
@@ -55,11 +60,98 @@ export interface UseStealthReturn {
 // CONSTANTS
 // ============================================================================
 
-const SECURE_STORE_KEY = "sip_stealth_keys"
+const SECURE_STORE_KEY = "sip_stealth_keys_v2" // New versioned key
+const LEGACY_STORE_KEY = "sip_stealth_keys" // For migration
 const SIP_CHAIN = "solana"
 
 // ============================================================================
-// HELPERS
+// STORAGE HELPERS
+// ============================================================================
+
+/**
+ * Load stealth keys storage from SecureStore
+ */
+async function loadStorage(): Promise<StealthKeysStorage | null> {
+  try {
+    const stored = await SecureStore.getItemAsync(SECURE_STORE_KEY)
+    if (!stored) return null
+    return JSON.parse(stored) as StealthKeysStorage
+  } catch (err) {
+    console.error("Failed to load stealth keys storage:", err)
+    return null
+  }
+}
+
+/**
+ * Save stealth keys storage to SecureStore
+ */
+async function saveStorage(storage: StealthKeysStorage): Promise<void> {
+  await SecureStore.setItemAsync(SECURE_STORE_KEY, JSON.stringify(storage))
+}
+
+/**
+ * Migrate legacy keys to new archival format
+ * Returns migrated storage or null if no legacy keys
+ */
+async function migrateLegacyKeys(): Promise<StealthKeysStorage | null> {
+  try {
+    const legacyData = await SecureStore.getItemAsync(LEGACY_STORE_KEY)
+    if (!legacyData) return null
+
+    console.log("Migrating legacy stealth keys to archival format...")
+
+    const legacyKeys = JSON.parse(legacyData) as StealthKeys
+    const keyId = `keys_${Date.now()}`
+
+    const storage: StealthKeysStorage = {
+      version: 1,
+      activeKeyId: keyId,
+      records: [
+        {
+          id: keyId,
+          keys: legacyKeys,
+          createdAt: Date.now(),
+          archivedAt: null,
+          isActive: true,
+        },
+      ],
+    }
+
+    // Save new format
+    await saveStorage(storage)
+
+    // Clean up legacy key
+    await SecureStore.deleteItemAsync(LEGACY_STORE_KEY)
+
+    console.log("Legacy keys migrated successfully")
+    return storage
+  } catch (err) {
+    console.error("Failed to migrate legacy keys:", err)
+    return null
+  }
+}
+
+/**
+ * Get a specific key record by ID
+ * Exported for use by useClaim hook
+ */
+export async function getKeyById(keyId: string): Promise<StealthKeysRecord | null> {
+  const storage = await loadStorage()
+  if (!storage) return null
+  return storage.records.find((r) => r.id === keyId) ?? null
+}
+
+/**
+ * Get the active key record
+ */
+async function getActiveKeyRecord(): Promise<StealthKeysRecord | null> {
+  const storage = await loadStorage()
+  if (!storage || !storage.activeKeyId) return null
+  return storage.records.find((r) => r.id === storage.activeKeyId) ?? null
+}
+
+// ============================================================================
+// ADDRESS HELPERS
 // ============================================================================
 
 /**
@@ -98,6 +190,7 @@ export function useStealth(): UseStealthReturn {
   const { isConnected, address } = useWalletStore()
 
   const [stealthAddress, setStealthAddress] = useState<StealthAddress | null>(null)
+  const [activeKeyId, setActiveKeyId] = useState<string | null>(null)
   const [keys, setKeys] = useState<StealthKeys | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -110,6 +203,7 @@ export function useStealth(): UseStealthReturn {
     } else {
       setStealthAddress(null)
       setKeys(null)
+      setActiveKeyId(null)
       setIsLoading(false)
     }
   }, [isConnected, address])
@@ -119,24 +213,36 @@ export function useStealth(): UseStealthReturn {
     setError(null)
 
     try {
-      // Try to load existing keys
-      const storedKeys = await SecureStore.getItemAsync(SECURE_STORE_KEY)
+      // Try to load existing storage
+      let storage = await loadStorage()
 
-      if (storedKeys) {
-        const parsedKeys = JSON.parse(storedKeys) as StealthKeys
-        setKeys(parsedKeys)
-
-        // Generate address from stored keys
-        const addr = formatStealthAddress(
-          SIP_CHAIN,
-          parsedKeys.spendingPublicKey,
-          parsedKeys.viewingPublicKey
-        )
-        setStealthAddress(addr)
-      } else {
-        // Generate new keys
-        await generateNewAddressInternal()
+      // Migrate legacy keys if needed
+      if (!storage) {
+        storage = await migrateLegacyKeys()
       }
+
+      if (storage && storage.activeKeyId) {
+        const activeRecord = storage.records.find(
+          (r) => r.id === storage!.activeKeyId
+        )
+
+        if (activeRecord) {
+          setKeys(activeRecord.keys)
+          setActiveKeyId(activeRecord.id)
+
+          // Generate address from stored keys
+          const addr = formatStealthAddress(
+            SIP_CHAIN,
+            activeRecord.keys.spendingPublicKey,
+            activeRecord.keys.viewingPublicKey
+          )
+          setStealthAddress(addr)
+          return
+        }
+      }
+
+      // No keys found, generate new ones
+      await generateNewAddressInternal()
     } catch (err) {
       console.error("Failed to load stealth keys:", err)
       setError("Failed to load stealth keys")
@@ -152,11 +258,43 @@ export function useStealth(): UseStealthReturn {
     try {
       // Generate new stealth keys using real cryptography
       const newKeys = await generateStealthKeys()
+      const keyId = `keys_${Date.now()}`
 
-      // Store securely
-      await SecureStore.setItemAsync(SECURE_STORE_KEY, JSON.stringify(newKeys))
+      // Create new key record
+      const newRecord: StealthKeysRecord = {
+        id: keyId,
+        keys: newKeys,
+        createdAt: Date.now(),
+        archivedAt: null,
+        isActive: true,
+      }
+
+      // Load or create storage
+      let storage = await loadStorage()
+
+      if (storage) {
+        // Archive all currently active keys
+        storage.records = storage.records.map((r) => ({
+          ...r,
+          isActive: false,
+          archivedAt: r.isActive ? Date.now() : r.archivedAt,
+        }))
+        storage.records.push(newRecord)
+        storage.activeKeyId = keyId
+      } else {
+        // Create new storage
+        storage = {
+          version: 1,
+          activeKeyId: keyId,
+          records: [newRecord],
+        }
+      }
+
+      // Save to SecureStore
+      await saveStorage(storage)
 
       setKeys(newKeys)
+      setActiveKeyId(keyId)
 
       // Create stealth address
       const addr = formatStealthAddress(
@@ -184,29 +322,30 @@ export function useStealth(): UseStealthReturn {
     return generateNewAddressInternal()
   }, [isConnected, generateNewAddressInternal])
 
+  /**
+   * Regenerate stealth address by archiving current and creating new
+   *
+   * IMPORTANT: This archives the current key instead of deleting it.
+   * Old payments remain claimable via getKeyById(). (#72)
+   *
+   * The caller should check for unclaimed payments BEFORE calling this.
+   */
   const regenerateAddress = useCallback(async (): Promise<StealthAddress | null> => {
-    // Clear existing keys and generate new ones
-    try {
-      await SecureStore.deleteItemAsync(SECURE_STORE_KEY)
-    } catch {
-      // Ignore delete errors
-    }
+    // Note: Unclaimed payment check is done by the caller (receive.tsx)
+    // This allows for user confirmation flow
     return generateNewAddress()
   }, [generateNewAddress])
 
   const getKeys = useCallback(async (): Promise<StealthKeys | null> => {
     if (keys) return keys
 
-    try {
-      const storedKeys = await SecureStore.getItemAsync(SECURE_STORE_KEY)
-      if (storedKeys) {
-        return JSON.parse(storedKeys) as StealthKeys
-      }
-    } catch {
-      // Ignore errors
-    }
-    return null
+    const activeRecord = await getActiveKeyRecord()
+    return activeRecord?.keys ?? null
   }, [keys])
+
+  const getActiveKeyIdCallback = useCallback((): string | null => {
+    return activeKeyId
+  }, [activeKeyId])
 
   const formatForDisplay = useCallback((addr: StealthAddress): string => {
     // Use the full address which is already properly formatted (base58 for Solana)
@@ -224,22 +363,26 @@ export function useStealth(): UseStealthReturn {
   return useMemo(
     () => ({
       stealthAddress,
+      activeKeyId,
       isGenerating,
       isLoading,
       error,
       generateNewAddress,
       regenerateAddress,
       getKeys,
+      getActiveKeyId: getActiveKeyIdCallback,
       formatForDisplay,
     }),
     [
       stealthAddress,
+      activeKeyId,
       isGenerating,
       isLoading,
       error,
       generateNewAddress,
       regenerateAddress,
       getKeys,
+      getActiveKeyIdCallback,
       formatForDisplay,
     ]
   )

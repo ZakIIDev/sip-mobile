@@ -18,7 +18,7 @@ import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js"
 import { usePrivacyStore } from "@/stores/privacy"
 import { useWalletStore } from "@/stores/wallet"
 import { useSettingsStore } from "@/stores/settings"
-import type { PaymentRecord } from "@/types"
+import type { PaymentRecord, StealthKeysStorage } from "@/types"
 import {
   checkStealthAddress,
   bytesToHex,
@@ -74,9 +74,49 @@ export interface UseScanPaymentsReturn {
 // CONSTANTS
 // ============================================================================
 
-const SECURE_STORE_KEY = "sip_stealth_keys"
+const SECURE_STORE_KEY_V2 = "sip_stealth_keys_v2"
+const LEGACY_STORE_KEY = "sip_stealth_keys"
 const BATCH_SIZE = 50
 const SCAN_DELAY_MS = 100 // Delay between batches for UI responsiveness
+
+/**
+ * Load keys from storage (handles both v2 archival and legacy formats)
+ * Returns keys and activeKeyId (null for legacy format)
+ */
+async function loadKeysFromStorage(): Promise<{
+  viewingPrivateKey: string
+  spendingPrivateKey: string
+  viewingPublicKey: string
+  spendingPublicKey: string
+  activeKeyId: string | null
+} | null> {
+  // Try v2 archival format first
+  const storageV2 = await SecureStore.getItemAsync(SECURE_STORE_KEY_V2)
+  if (storageV2) {
+    const storage = JSON.parse(storageV2) as StealthKeysStorage
+    if (storage.activeKeyId) {
+      const activeRecord = storage.records.find((r) => r.id === storage.activeKeyId)
+      if (activeRecord) {
+        return {
+          ...activeRecord.keys,
+          activeKeyId: activeRecord.id,
+        }
+      }
+    }
+  }
+
+  // Fall back to legacy format
+  const legacy = await SecureStore.getItemAsync(LEGACY_STORE_KEY)
+  if (legacy) {
+    const keys = JSON.parse(legacy)
+    return {
+      ...keys,
+      activeKeyId: null, // Legacy payments won't have keyId
+    }
+  }
+
+  return null
+}
 
 // ============================================================================
 // HELPERS
@@ -258,13 +298,12 @@ export function useScanPayments(): UseScanPaymentsReturn {
           message: "Loading stealth keys...",
         })
 
-        const storedKeys = await SecureStore.getItemAsync(SECURE_STORE_KEY)
-        if (!storedKeys) {
+        const keysData = await loadKeysFromStorage()
+        if (!keysData) {
           throw new Error("No stealth keys found. Generate an address first.")
         }
 
-        const keys = JSON.parse(storedKeys)
-        const { viewingPrivateKey, spendingPrivateKey, viewingPublicKey, spendingPublicKey } = keys
+        const { viewingPrivateKey, spendingPrivateKey, viewingPublicKey, spendingPublicKey, activeKeyId } = keysData
 
         if (!viewingPrivateKey || !spendingPrivateKey) {
           throw new Error("Stealth keys not found")
@@ -429,7 +468,7 @@ export function useScanPayments(): UseScanPaymentsReturn {
               const stealthRecipientBase58 = record.stealthRecipient.toBase58()
               const claimableStealthAddress = `sip:solana:${ephemeralHex}:${stealthRecipientBase58}`
 
-              // Create payment record
+              // Create payment record with keyId for archival claim support (#72)
               const payment: PaymentRecord = {
                 id: `payment_${Date.now()}_${result.found}`,
                 type: "receive",
@@ -441,6 +480,7 @@ export function useScanPayments(): UseScanPaymentsReturn {
                 timestamp: Number(record.timestamp) * 1000, // Convert to ms
                 privacyLevel: "shielded",
                 claimed: false,
+                keyId: activeKeyId ?? undefined, // Link to active key set for claiming
               }
 
               result.newPayments.push(payment)

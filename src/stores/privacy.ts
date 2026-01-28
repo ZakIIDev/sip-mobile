@@ -21,6 +21,9 @@ interface PrivacyStore {
   getPayment: (id: string) => PaymentRecord | undefined
   clearPayments: () => void
 
+  // Payment queries
+  getUnclaimedPaymentsCount: () => number
+
   // Scanning state
   isScanning: boolean
   lastScanTimestamp: number | null
@@ -59,6 +62,12 @@ export const usePrivacyStore = create<PrivacyStore>()(
         })),
       getPayment: (id) => get().payments.find((p) => p.id === id),
       clearPayments: () => set({ payments: [] }),
+
+      // Payment queries
+      getUnclaimedPaymentsCount: () =>
+        get().payments.filter(
+          (p) => p.type === "receive" && !p.claimed && p.status !== "failed"
+        ).length,
 
       // Scanning
       isScanning: false,

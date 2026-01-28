@@ -15,7 +15,8 @@ import { usePrivacyStore } from "@/stores/privacy"
 import { useWalletStore } from "@/stores/wallet"
 import { useSettingsStore } from "@/stores/settings"
 import { useNativeWallet } from "./useNativeWallet"
-import type { PaymentRecord } from "@/types"
+import { getKeyById } from "./useStealth"
+import type { PaymentRecord, StealthKeys, StealthKeysStorage } from "@/types"
 import {
   deriveStealthPrivateKey,
   type StealthAddress,
@@ -67,8 +68,51 @@ export interface UseClaimReturn {
 // CONSTANTS
 // ============================================================================
 
-const SECURE_STORE_KEY = "sip_stealth_keys"
+const SECURE_STORE_KEY_V2 = "sip_stealth_keys_v2"
+const LEGACY_STORE_KEY = "sip_stealth_keys"
 const CLAIM_STEPS = 4
+
+/**
+ * Load stealth keys for claiming a payment
+ *
+ * If payment has keyId, loads from archived keys.
+ * Falls back to active keys for legacy payments. (#72)
+ */
+async function loadKeysForPayment(payment: PaymentRecord): Promise<StealthKeys | null> {
+  // If payment has keyId, load that specific key set (archival system)
+  if (payment.keyId) {
+    const keyRecord = await getKeyById(payment.keyId)
+    if (keyRecord) {
+      return keyRecord.keys
+    }
+    console.warn(`Keys for keyId ${payment.keyId} not found, trying active keys`)
+  }
+
+  // Fall back to active keys (for legacy payments or if keyId not found)
+  try {
+    // Try v2 archival format first
+    const storageV2 = await SecureStore.getItemAsync(SECURE_STORE_KEY_V2)
+    if (storageV2) {
+      const storage = JSON.parse(storageV2) as StealthKeysStorage
+      if (storage.activeKeyId) {
+        const activeRecord = storage.records.find((r) => r.id === storage.activeKeyId)
+        if (activeRecord) {
+          return activeRecord.keys
+        }
+      }
+    }
+
+    // Fall back to legacy format
+    const legacy = await SecureStore.getItemAsync(LEGACY_STORE_KEY)
+    if (legacy) {
+      return JSON.parse(legacy) as StealthKeys
+    }
+  } catch (err) {
+    console.error("Failed to load stealth keys:", err)
+  }
+
+  return null
+}
 
 // ============================================================================
 // HELPERS
@@ -245,7 +289,7 @@ export function useClaim(): UseClaimReturn {
       setError(null)
 
       try {
-        // Step 1: Load keys
+        // Step 1: Load keys (supports archived keys via keyId) (#72)
         setProgress({
           status: "deriving",
           message: "Loading stealth keys...",
@@ -253,12 +297,11 @@ export function useClaim(): UseClaimReturn {
           totalSteps: CLAIM_STEPS,
         })
 
-        const storedKeys = await SecureStore.getItemAsync(SECURE_STORE_KEY)
-        if (!storedKeys) {
-          throw new Error("Stealth keys not found")
+        const keys = await loadKeysForPayment(payment)
+        if (!keys) {
+          throw new Error("Stealth keys not found. Keys may have been deleted.")
         }
 
-        const keys = JSON.parse(storedKeys)
         const { viewingPrivateKey, spendingPrivateKey } = keys
 
         if (!viewingPrivateKey || !spendingPrivateKey) {

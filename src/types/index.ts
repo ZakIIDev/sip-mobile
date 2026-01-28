@@ -79,6 +79,55 @@ export interface PaymentRecord {
   privacyLevel: PrivacyLevel
   claimed?: boolean
   claimedAt?: number
+  /** Links to StealthKeysRecord.id - required for claiming archived keys */
+  keyId?: string
+}
+
+// ============================================================================
+// STEALTH KEY ARCHIVAL TYPES
+// ============================================================================
+
+/**
+ * Stealth keys for DKSAP (Dual-Key Stealth Address Protocol)
+ */
+export interface StealthKeys {
+  spendingPrivateKey: string
+  spendingPublicKey: string
+  viewingPrivateKey: string
+  viewingPublicKey: string
+}
+
+/**
+ * Stealth key record with metadata for archival system
+ *
+ * Keys are NEVER deleted - only archived when regenerated.
+ * This ensures old payments remain claimable.
+ */
+export interface StealthKeysRecord {
+  /** Unique identifier: "keys_<timestamp>" */
+  id: string
+  /** The cryptographic keys */
+  keys: StealthKeys
+  /** When this key set was generated (ms since epoch) */
+  createdAt: number
+  /** When this key set was archived (null if active) */
+  archivedAt: number | null
+  /** Only one key set can be active at a time */
+  isActive: boolean
+}
+
+/**
+ * Storage structure for stealth keys (persisted to SecureStore)
+ *
+ * Version 1: Archival system - keys are archived, not deleted
+ */
+export interface StealthKeysStorage {
+  /** Storage format version for migrations */
+  version: 1
+  /** Currently active key set ID (null if none) */
+  activeKeyId: string | null
+  /** All key records (active + archived) */
+  records: StealthKeysRecord[]
 }
 
 // ============================================================================

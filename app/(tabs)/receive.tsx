@@ -24,8 +24,9 @@ import { useState, useCallback } from "react"
 import QRCode from "react-native-qrcode-svg"
 import { useStealth } from "@/hooks/useStealth"
 import { useWalletStore } from "@/stores/wallet"
+import { usePrivacyStore } from "@/stores/privacy"
 import { useToastStore } from "@/stores/toast"
-import { Button } from "@/components/ui"
+import { Button, ConfirmModal } from "@/components/ui"
 
 type Tab = "address" | "amount"
 
@@ -39,11 +40,13 @@ export default function ReceiveScreen() {
     formatForDisplay,
   } = useStealth()
   const { isConnected } = useWalletStore()
+  const { getUnclaimedPaymentsCount } = usePrivacyStore()
   const { addToast } = useToastStore()
 
   const [activeTab, setActiveTab] = useState<Tab>("address")
   const [requestAmount, setRequestAmount] = useState("")
   const [copied, setCopied] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   // Generate payment request URI with optional amount
   const getPaymentUri = useCallback((): string => {
@@ -92,6 +95,31 @@ export default function ReceiveScreen() {
     }
   }
 
+  /**
+   * Handle regenerate button press
+   *
+   * Blocks if there are unclaimed payments to prevent fund loss (#72).
+   * Shows confirmation modal before proceeding.
+   */
+  const handleRegeneratePress = () => {
+    const unclaimedCount = getUnclaimedPaymentsCount()
+
+    if (unclaimedCount > 0) {
+      addToast({
+        type: "error",
+        title: "Cannot regenerate",
+        message: `Claim ${unclaimedCount} pending payment${unclaimedCount > 1 ? "s" : ""} first`,
+        duration: 4000,
+      })
+      return
+    }
+
+    setShowConfirmModal(true)
+  }
+
+  /**
+   * Execute regeneration after user confirmation
+   */
   const handleRegenerate = async () => {
     const newAddress = await regenerateAddress()
     if (newAddress) {
@@ -234,7 +262,7 @@ export default function ReceiveScreen() {
             <View className="flex-row items-center justify-between mb-2">
               <Text className="text-dark-400 text-sm">Stealth Address</Text>
               <TouchableOpacity
-                onPress={handleRegenerate}
+                onPress={handleRegeneratePress}
                 disabled={isGenerating}
                 className="flex-row items-center"
               >
@@ -362,6 +390,17 @@ export default function ReceiveScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Confirmation Modal for Address Regeneration (#72) */}
+      <ConfirmModal
+        visible={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleRegenerate}
+        title="Generate New Address?"
+        message="Your current address will be archived. Past payments remain claimable with archived keys."
+        confirmText="Generate"
+        cancelText="Cancel"
+      />
     </SafeAreaView>
   )
 }
