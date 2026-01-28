@@ -179,21 +179,23 @@ app/settings/backup.tsx        # View/backup recovery phrase
 | Provider | Status | SDK | Send | Swap | Signing |
 |----------|--------|-----|------|------|---------|
 | **SIP Native** | ✅ Complete | Built-in | ✅ | ✅ | Wallet Adapter |
-| **ShadowWire** | ✅ SDK Integrated | `@radr/shadowwire@1.1.15` | ✅ | ❌ | signMessage ✅ |
-| **Privacy Cash** | ⏳ SDK Installed | `privacycash@1.1.11` | ✅ | ❌ | Keypair ⚠️ |
+| **ShadowWire** | ✅ Complete | `@radr/shadowwire@1.1.15` | ✅ | ❌ | signMessage |
+| **Privacy Cash** | ✅ Complete | `privacycash@1.1.11` | ✅ | ❌ | Keypair + Biometric |
 
 ### Integration Notes
 
-**ShadowWire:** Ready for production use.
-- Uses `signMessage` callback — wallet adapter compatible!
+**ShadowWire:**
+- Uses `signMessage` callback — wallet adapter compatible
 - 22 supported tokens (SOL, USDC, BONK, ORE, RADR, JIM, etc.)
 - Transfer types: `internal` (amount hidden via ZK) / `external` (sender anonymous)
 - NO swap support — focuses on private transfers
 
-**Privacy Cash:** Requires additional work.
-- SDK signs internally using `Keypair` — NOT wallet adapter compatible
-- Need to integrate with biometric-protected key access from SecureStore
-- Pool-based mixing model (Tornado-style)
+**Privacy Cash:**
+- SDK signs internally using `Keypair`
+- Keypair accessed via biometric auth from SecureStore
+- Secret key cleared from memory after each operation
+- Pool-based mixing model (Tornado-style, ZK proofs)
+- Supports SOL, USDC, USDT
 - NO swap support — only deposit/withdraw
 
 ### Key Files
@@ -201,14 +203,15 @@ app/settings/backup.tsx        # View/backup recovery phrase
 ```
 src/privacy-providers/
 ├── types.ts          # PrivacyProviderAdapter interface
-├── sip-native.ts     # SIP Native adapter (default, active)
-├── privacy-cash.ts   # Privacy Cash adapter (needs keypair integration)
-├── shadowwire.ts     # ShadowWire adapter (ready, signMessage compatible)
+├── sip-native.ts     # SIP Native adapter (default)
+├── privacy-cash.ts   # Privacy Cash adapter (biometric + keypair)
+├── shadowwire.ts     # ShadowWire adapter (signMessage)
 ├── registry.ts       # Factory & caching
 └── index.ts          # Module exports
 
 src/hooks/usePrivacyProvider.ts  # Hook for components
 src/stores/settings.ts           # privacyProvider state
+src/utils/keyStorage.ts          # SecureStore + biometric auth
 ```
 
 ---

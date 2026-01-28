@@ -284,7 +284,7 @@ export const PRIVACY_PROVIDERS: PrivacyProviderInfo[] = [
       viewingKeys: false, // SIP adds this on top
       compliance: false,
     },
-    status: "coming-soon", // Needs keypair integration (signs internally)
+    status: "available", // Keypair integration done - biometric auth required
   },
   {
     id: "shadowwire",

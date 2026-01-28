@@ -12,6 +12,11 @@
  * Flow:
  * - Send: deposit(lamports) → withdraw(to recipient)
  *
+ * Security:
+ * - SDK requires Keypair for internal signing
+ * - Private key accessed via biometric auth from SecureStore
+ * - Key cleared from memory after use
+ *
  * Note: SIP adds viewing keys on top for compliance.
  *
  * @see https://github.com/Privacy-Cash/privacy-cash-sdk
@@ -29,6 +34,9 @@ import type {
   AdapterOptions,
 } from "./types"
 import { debug } from "@/utils/logger"
+import { getPrivateKey, clearSensitiveData } from "@/utils/keyStorage"
+import { Keypair } from "@solana/web3.js"
+import bs58 from "bs58"
 
 // ============================================================================
 // TYPES
@@ -91,6 +99,13 @@ const SUPPORTED_TOKENS: Record<string, { mint: string; decimals: number }> = {
 /** SOL decimals */
 const SOL_DECIMALS = 9
 
+/** RPC endpoints by network */
+const RPC_ENDPOINTS: Record<string, string> = {
+  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+  devnet: "https://api.devnet.solana.com",
+  testnet: "https://api.testnet.solana.com",
+}
+
 // ============================================================================
 // PRIVACY CASH ADAPTER
 // ============================================================================
@@ -101,7 +116,12 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
 
   private options: AdapterOptions
   private initialized = false
-  private client: PrivacyCashClient | null = null
+  /** SDK class loaded dynamically - client created on-demand with keypair */
+  private PrivacyCashClass: (new (config: {
+    RPC_url: string
+    owner: Keypair
+    enableDebug?: boolean
+  }) => PrivacyCashClient) | null = null
 
   constructor(options: AdapterOptions) {
     this.options = options
@@ -109,28 +129,51 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
 
   async initialize(): Promise<void> {
     try {
-      // Privacy Cash SDK requires a Keypair for signing
-      // This is a security-sensitive operation that needs the private key
-      //
-      // INTEGRATION NOTE:
-      // The SDK signs transactions internally, so we need to pass the keypair.
-      // For mobile, this means extracting the key from SecureStore.
-      // This should only happen with user biometric authentication.
-      //
-      // Example initialization (when private key is available):
-      // const { PrivacyCash } = await import("privacycash")
-      // this.client = new PrivacyCash({
-      //   RPC_url: getRpcEndpoint(this.options.network),
-      //   owner: keypairFromPrivateKey,
-      //   enableDebug: __DEV__,
-      // })
+      // Import Privacy Cash SDK
+      const { PrivacyCash } = await import("privacycash")
+      // Cast through unknown - SDK accepts multiple owner types
+      this.PrivacyCashClass = PrivacyCash as unknown as typeof this.PrivacyCashClass
 
-      debug("Privacy Cash SDK installed - awaiting keypair integration")
+      debug("Privacy Cash SDK loaded successfully")
       this.initialized = true
     } catch (err) {
-      debug("Privacy Cash initialization failed:", err)
+      debug("Privacy Cash SDK initialization failed:", err)
       this.initialized = true
     }
+  }
+
+  /**
+   * Get keypair from SecureStore (requires biometric auth)
+   * Creates client on-demand for each operation
+   */
+  private async getClientWithKeypair(): Promise<{
+    client: PrivacyCashClient
+    keypair: Keypair
+    secretKey: Uint8Array
+  }> {
+    if (!this.PrivacyCashClass) {
+      throw new Error("Privacy Cash SDK not loaded")
+    }
+
+    // Get private key (triggers biometric auth)
+    const privateKeyBase58 = await getPrivateKey()
+    if (!privateKeyBase58) {
+      throw new Error("Wallet not found or authentication failed")
+    }
+
+    // Decode and create keypair
+    const secretKey = bs58.decode(privateKeyBase58)
+    const keypair = Keypair.fromSecretKey(secretKey)
+
+    // Create client with keypair
+    const rpcUrl = this.options.rpcEndpoint || RPC_ENDPOINTS[this.options.network]
+    const client = new this.PrivacyCashClass({
+      RPC_url: rpcUrl,
+      owner: keypair,
+      enableDebug: false,
+    })
+
+    return { client, keypair, secretKey }
   }
 
   isReady(): boolean {
@@ -185,19 +228,20 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
   ): Promise<PrivacySendResult> {
     onStatusChange?.("validating")
 
-    // Check if SDK client is available
-    if (!this.client) {
+    // Check if SDK is loaded
+    if (!this.PrivacyCashClass) {
       onStatusChange?.("error")
       return {
         success: false,
-        error: "Privacy Cash requires keypair integration. Coming soon!",
+        error: "Privacy Cash SDK not loaded. Please try again.",
         providerData: {
-          status: "awaiting_keypair_integration",
-          reason: "SDK requires direct keypair access for signing",
+          status: "sdk_not_loaded",
           package: "privacycash@1.1.11",
         },
       }
     }
+
+    let secretKey: Uint8Array | null = null
 
     try {
       // Validate recipient
@@ -207,6 +251,11 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
       }
 
       onStatusChange?.("preparing")
+
+      // Get client with keypair (triggers biometric auth)
+      debug("Privacy Cash: Requesting biometric auth...")
+      const { client, secretKey: key } = await this.getClientWithKeypair()
+      secretKey = key
 
       // Convert amount to lamports (SOL) or base_units (SPL)
       const amount = parseFloat(params.amount)
@@ -225,7 +274,7 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
 
         // Deposit to pool
         debug("Privacy Cash: Depositing SPL to pool...")
-        await this.client.depositSPL({
+        await client.depositSPL({
           base_units: baseUnits,
           mintAddress: params.tokenMint!,
         })
@@ -234,7 +283,7 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
 
         // Withdraw to recipient
         debug("Privacy Cash: Withdrawing SPL to recipient...")
-        const result = await this.client.withdrawSPL({
+        const result = await client.withdrawSPL({
           base_units: baseUnits,
           mintAddress: params.tokenMint!,
           recipientAddress: params.recipient,
@@ -259,13 +308,13 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
 
         // Deposit to pool
         debug("Privacy Cash: Depositing SOL to pool...")
-        await this.client.deposit({ lamports })
+        await client.deposit({ lamports })
 
         onStatusChange?.("submitting")
 
         // Withdraw to recipient
         debug("Privacy Cash: Withdrawing SOL to recipient...")
-        const result = await this.client.withdraw({
+        const result = await client.withdraw({
           lamports,
           recipientAddress: params.recipient,
         })
@@ -284,9 +333,24 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
       }
     } catch (err) {
       onStatusChange?.("error")
+      const message = err instanceof Error ? err.message : "Privacy Cash send failed"
+
+      // Check for auth failure
+      if (message.includes("authentication") || message.includes("canceled")) {
+        return {
+          success: false,
+          error: "Biometric authentication required to send with Privacy Cash",
+        }
+      }
+
       return {
         success: false,
-        error: err instanceof Error ? err.message : "Privacy Cash send failed",
+        error: message,
+      }
+    } finally {
+      // CRITICAL: Clear secret key from memory
+      if (secretKey) {
+        clearSensitiveData(secretKey)
       }
     }
   }
@@ -318,16 +382,22 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
   /**
    * Get private balance in Privacy Cash pool
    * This is additional functionality not in the base adapter interface
+   * NOTE: Requires biometric auth to access
    */
   async getPrivateBalance(): Promise<{ sol: number; usdc?: number; usdt?: number }> {
-    if (!this.client) {
+    if (!this.PrivacyCashClass) {
       return { sol: 0 }
     }
 
+    let secretKey: Uint8Array | null = null
+
     try {
-      const solBalance = await this.client.getPrivateBalance()
-      const usdcBalance = await this.client.getPrivateBalanceSpl(SUPPORTED_TOKENS.USDC.mint)
-      const usdtBalance = await this.client.getPrivateBalanceSpl(SUPPORTED_TOKENS.USDT.mint)
+      const { client, secretKey: key } = await this.getClientWithKeypair()
+      secretKey = key
+
+      const solBalance = await client.getPrivateBalance()
+      const usdcBalance = await client.getPrivateBalanceSpl(SUPPORTED_TOKENS.USDC.mint)
+      const usdtBalance = await client.getPrivateBalanceSpl(SUPPORTED_TOKENS.USDT.mint)
 
       return {
         sol: solBalance.lamports / Math.pow(10, SOL_DECIMALS),
@@ -337,6 +407,11 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
     } catch (err) {
       debug("Failed to get private balance:", err)
       return { sol: 0 }
+    } finally {
+      // Clear secret key from memory
+      if (secretKey) {
+        clearSensitiveData(secretKey)
+      }
     }
   }
 }
