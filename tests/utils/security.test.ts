@@ -18,6 +18,12 @@ import {
   isSessionExpired,
   getSessionRemaining,
   getSecurityRecommendations,
+  validateTransactionAmount,
+  isDebugMode,
+  getSecurityWarnings,
+  CLIPBOARD_CLEAR_TIMEOUT_MS,
+  MAX_SOL_AMOUNT,
+  MIN_SOL_AMOUNT,
 } from "@/utils/security"
 
 describe("Security Constants", () => {
@@ -202,5 +208,69 @@ describe("Security Recommendations", () => {
   it("should include auto-lock recommendation", () => {
     const recommendations = getSecurityRecommendations()
     expect(recommendations.some((r) => r.includes("auto-lock"))).toBe(true)
+  })
+})
+
+describe("Transaction Validation", () => {
+  it("should validate positive amounts", () => {
+    expect(validateTransactionAmount(1).valid).toBe(true)
+    expect(validateTransactionAmount(0.001).valid).toBe(true)
+    expect(validateTransactionAmount(1000).valid).toBe(true)
+  })
+
+  it("should reject zero and negative amounts", () => {
+    expect(validateTransactionAmount(0).valid).toBe(false)
+    expect(validateTransactionAmount(-1).valid).toBe(false)
+    expect(validateTransactionAmount(-0.001).valid).toBe(false)
+  })
+
+  it("should reject NaN and Infinity", () => {
+    expect(validateTransactionAmount(NaN).valid).toBe(false)
+    expect(validateTransactionAmount(Infinity).valid).toBe(false)
+    expect(validateTransactionAmount(-Infinity).valid).toBe(false)
+  })
+
+  it("should reject amounts below minimum", () => {
+    expect(validateTransactionAmount(MIN_SOL_AMOUNT / 10).valid).toBe(false)
+  })
+
+  it("should reject amounts above maximum", () => {
+    expect(validateTransactionAmount(MAX_SOL_AMOUNT + 1).valid).toBe(false)
+  })
+
+  it("should validate string amounts", () => {
+    expect(validateTransactionAmount("1.5").valid).toBe(true)
+    expect(validateTransactionAmount("invalid").valid).toBe(false)
+    expect(validateTransactionAmount("").valid).toBe(false)
+  })
+})
+
+describe("Debug Mode Detection", () => {
+  it("should detect debug mode", () => {
+    // In test environment, __DEV__ is true
+    expect(typeof isDebugMode()).toBe("boolean")
+  })
+
+  it("should return security warnings array", () => {
+    const warnings = getSecurityWarnings()
+    expect(Array.isArray(warnings)).toBe(true)
+  })
+})
+
+describe("Secure Clipboard Constants", () => {
+  it("should have clipboard timeout constant", () => {
+    expect(CLIPBOARD_CLEAR_TIMEOUT_MS).toBe(60 * 1000) // 60 seconds
+  })
+})
+
+describe("Transaction Amount Constants", () => {
+  it("should have reasonable max SOL amount", () => {
+    expect(MAX_SOL_AMOUNT).toBeGreaterThan(0)
+    expect(MAX_SOL_AMOUNT).toBeLessThan(Number.MAX_SAFE_INTEGER)
+  })
+
+  it("should have reasonable min SOL amount", () => {
+    expect(MIN_SOL_AMOUNT).toBeGreaterThan(0)
+    expect(MIN_SOL_AMOUNT).toBeLessThan(1)
   })
 })

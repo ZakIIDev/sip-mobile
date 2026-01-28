@@ -8,9 +8,9 @@ import { View, Text, TouchableOpacity, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { useState } from "react"
-import * as Clipboard from "expo-clipboard"
 import { Button, LoadingState } from "@/components/ui"
 import { useNativeWallet } from "@/hooks"
+import { copyToClipboardSecure, clearClipboard } from "@/utils/security"
 
 export default function BackupWalletScreen() {
   const { wallet, exportMnemonic, isLoading } = useNativeWallet()
@@ -40,13 +40,16 @@ export default function BackupWalletScreen() {
 
   const handleCopy = async () => {
     if (mnemonic) {
-      await Clipboard.setStringAsync(mnemonic.join(" "))
+      // Use secure clipboard with 60-second auto-clear
+      await copyToClipboardSecure(mnemonic.join(" "))
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
   }
 
-  const handleHide = () => {
+  const handleHide = async () => {
+    // Clear clipboard when hiding mnemonic
+    await clearClipboard()
     setMnemonic(null)
   }
 

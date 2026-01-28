@@ -7,6 +7,7 @@
 import { Platform, AppState, AppStateStatus } from "react-native"
 import * as SecureStore from "expo-secure-store"
 import * as Crypto from "expo-crypto"
+import * as Clipboard from "expo-clipboard"
 
 // ============================================================================
 // CONSTANTS
@@ -352,8 +353,150 @@ export async function secureLogout(): Promise<void> {
   // Clear session
   clearSensitiveMemory()
 
+  // Clear clipboard
+  await clearClipboard()
+
   // Clear secure storage keys (keep PIN hash for re-login)
   await SecureStorage.delete("session_token")
   await SecureStorage.delete("viewing_key")
   await SecureStorage.delete("spending_key")
+}
+
+// ============================================================================
+// SECURE CLIPBOARD
+// ============================================================================
+
+/** Default clipboard auto-clear timeout (60 seconds) */
+export const CLIPBOARD_CLEAR_TIMEOUT_MS = 60 * 1000
+
+/** Active clipboard clear timers */
+const clipboardTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+/**
+ * Copy sensitive data to clipboard with auto-clear
+ *
+ * @param data - The sensitive data to copy
+ * @param clearAfterMs - Time before auto-clear (default: 60 seconds)
+ * @returns Promise<boolean> - Whether copy succeeded
+ */
+export async function copyToClipboardSecure(
+  data: string,
+  clearAfterMs: number = CLIPBOARD_CLEAR_TIMEOUT_MS
+): Promise<boolean> {
+  try {
+    await Clipboard.setStringAsync(data)
+
+    // Clear any existing timer for this data
+    const existingTimer = clipboardTimers.get("sensitive")
+    if (existingTimer) {
+      clearTimeout(existingTimer)
+    }
+
+    // Set auto-clear timer
+    const timer = setTimeout(async () => {
+      await clearClipboard()
+      clipboardTimers.delete("sensitive")
+    }, clearAfterMs)
+
+    clipboardTimers.set("sensitive", timer)
+    return true
+  } catch (error) {
+    console.error("[SecureClipboard] Failed to copy:", error)
+    return false
+  }
+}
+
+/**
+ * Clear the clipboard
+ */
+export async function clearClipboard(): Promise<void> {
+  try {
+    await Clipboard.setStringAsync("")
+  } catch (error) {
+    console.error("[SecureClipboard] Failed to clear:", error)
+  }
+}
+
+/**
+ * Cancel all clipboard clear timers
+ * Call this if user manually clears or navigates away
+ */
+export function cancelClipboardTimers(): void {
+  clipboardTimers.forEach((timer) => clearTimeout(timer))
+  clipboardTimers.clear()
+}
+
+/**
+ * Get remaining time before clipboard auto-clears (for UI display)
+ * Returns 0 if no timer is active
+ */
+export function getClipboardClearRemaining(): number {
+  // Note: We can't get exact remaining time from setTimeout
+  // This is a placeholder for UI purposes
+  return clipboardTimers.has("sensitive") ? CLIPBOARD_CLEAR_TIMEOUT_MS : 0
+}
+
+// ============================================================================
+// TRANSACTION VALIDATION
+// ============================================================================
+
+/** Maximum SOL amount (to prevent overflow) */
+export const MAX_SOL_AMOUNT = 1_000_000_000 // 1 billion SOL
+
+/** Minimum SOL amount for a transaction */
+export const MIN_SOL_AMOUNT = 0.000001 // 1 lamport worth
+
+/**
+ * Validate transaction amount
+ */
+export function validateTransactionAmount(
+  amount: number | string
+): { valid: boolean; error?: string } {
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount
+
+  if (isNaN(numAmount)) {
+    return { valid: false, error: "Invalid amount" }
+  }
+
+  if (numAmount <= 0) {
+    return { valid: false, error: "Amount must be greater than 0" }
+  }
+
+  if (numAmount < MIN_SOL_AMOUNT) {
+    return { valid: false, error: `Minimum amount is ${MIN_SOL_AMOUNT} SOL` }
+  }
+
+  if (numAmount > MAX_SOL_AMOUNT) {
+    return { valid: false, error: "Amount exceeds maximum allowed" }
+  }
+
+  if (!Number.isFinite(numAmount)) {
+    return { valid: false, error: "Invalid amount" }
+  }
+
+  return { valid: true }
+}
+
+// ============================================================================
+// DEBUG MODE DETECTION
+// ============================================================================
+
+/**
+ * Check if app is running in debug/development mode
+ */
+export function isDebugMode(): boolean {
+  return __DEV__
+}
+
+/**
+ * Get security warnings for current environment
+ */
+export function getSecurityWarnings(): string[] {
+  const warnings: string[] = []
+
+  if (__DEV__) {
+    warnings.push("Running in development mode - not recommended for real funds")
+  }
+
+  return warnings
 }

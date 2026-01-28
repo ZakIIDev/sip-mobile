@@ -21,8 +21,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { useState, useCallback } from "react"
-import * as Clipboard from "expo-clipboard"
 import { useViewingKeys } from "@/hooks/useViewingKeys"
+import { copyToClipboardSecure } from "@/utils/security"
 import { useWalletStore } from "@/stores/wallet"
 import { useToastStore } from "@/stores/toast"
 import { Button, Modal } from "@/components/ui"
@@ -249,11 +249,12 @@ export default function ViewingKeysScreen() {
       })
 
       if (exportString) {
-        await Clipboard.setStringAsync(exportString)
+        // Use secure clipboard with 60-second auto-clear
+        await copyToClipboardSecure(exportString)
         addToast({
           type: "success",
           title: "Copied!",
-          message: "Viewing key copied to clipboard",
+          message: "Viewing key copied to clipboard (clears in 60s)",
         })
         setShowDisclosureModal(true)
       }
