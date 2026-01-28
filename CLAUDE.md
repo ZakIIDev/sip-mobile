@@ -2,9 +2,78 @@
 
 > **Ecosystem:** [sip-protocol/CLAUDE.md](https://github.com/sip-protocol/sip-protocol/blob/main/CLAUDE.md)
 
-**Purpose:** Privacy-first Solana wallet — native key management + shielded payments on iOS, Android & Seeker
+**Tagline:** "Privacy in Your Pocket"
+**Purpose:** Daily privacy wallet for Solana — native key management, quick payments, on-the-go swaps
+**Target:** iOS App Store, Google Play, Solana dApp Store (Seeker)
 
-**Positioning:** Standalone privacy wallet (not a layer on top of other wallets)
+---
+
+## 🎯 PRODUCT POSITIONING
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SIP PRODUCT FAMILY (Jupiter Model)                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  @sip-protocol/sdk — THE PRIVACY STANDARD                                   │
+│  "Any app can add privacy with one line of code"                           │
+│                                                                             │
+│  ┌─────────────────────────────┐   ┌─────────────────────────────┐         │
+│  │  app.sip-protocol.org      │   │  SIP Privacy (Mobile)       │         │
+│  │  ───────────────────────   │   │  ────────────────────────   │         │
+│  │  "Privacy Command Center"  │   │  "Privacy in Your Pocket"   │         │
+│  │                            │   │                             │         │
+│  │  • Power users/Enterprise  │   │  • Consumers                │         │
+│  │  • Complex visualizations  │   │  • Quick payments/swaps     │         │
+│  │  • Compliance dashboards   │   │  • Native key management    │         │
+│  │  • Audit trails/Reports    │   │  • Biometric security       │         │
+│  │  • SDK showcase            │   │  • On-the-go privacy        │         │
+│  │                            │   │                             │         │
+│  │  → sip-app repo            │   │  ← YOU ARE HERE             │         │
+│  └─────────────────────────────┘   └─────────────────────────────┘         │
+│                                                                             │
+│  COMPANION PRODUCTS — Same brand, platform-optimized experiences            │
+│  Like jup.ag (web) + Jupiter Mobile (app) — NOT 1:1 clones                 │
+│                                                                             │
+│  BOTH are real products with real users — NOT demos                        │
+│  BOTH showcase SDK capabilities → drive developer adoption                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### sip-mobile Differentiators (Mobile Strengths)
+
+| Capability | Why Mobile Excels |
+|------------|-------------------|
+| **Native Key Management** | SecureStore + Biometrics — keys never leave device |
+| **Quick Payments** | Scan QR, send in seconds, biometric confirm |
+| **On-the-go Swaps** | Jupiter DEX with privacy toggle — trade anywhere |
+| **Camera Integration** | Native QR scanning for stealth addresses |
+| **Push Notifications** | Payment received alerts (planned) |
+| **Consumer UX** | Simple privacy toggle, no jargon |
+
+### Shared with sip-app (Must Be Identical)
+
+- Core privacy primitives (stealth addresses, commitments, viewing keys)
+- Privacy levels (transparent / shielded / compliant)
+- Payment protocol (send / receive / scan / claim / disclose)
+- Viewing key disclosure for compliance
+
+### Feature Parity Matrix
+
+| Feature | sip-mobile | sip-app (Web) | Notes |
+|---------|------------|---------------|-------|
+| Send Payments | ✅ Full | ✅ Full | Same core |
+| Receive (Stealth) | ✅ Full | ✅ Full | Same core |
+| Scan Payments | ✅ Full | ✅ Full | Mobile has native camera |
+| Claim Payments | ✅ Full | ✅ Full | Same core |
+| View History | ✅ Full | ✅ Full | Different viz |
+| Viewing Key Disclosure | ✅ Full | ✅ Full | Compliance-critical |
+| Jupiter DEX | ✅ Full | 🔲 Scaffolded | Mobile-first for swaps |
+| Privacy Score | ✅ Basic | ✅ Full (D3) | Web excels at viz |
+| Compliance Dashboard | ✅ Basic | 🔲 Scaffolded | Web for enterprise |
+| Native Key Mgmt | ✅ Full | ❌ N/A | Mobile-only |
+| Biometric Auth | ✅ Full | ❌ N/A | Mobile-only |
+| Multi-Account | ✅ Full | 🔲 Planned | Mobile-first |
 
 ---
 
@@ -176,4 +245,17 @@ scrcpy --record session.mp4                    # Record
 
 ---
 
-**Status:** v0.1.4 | dApp Store submitted | Native wallet complete | Seed Vault stub (pending native module setup)
+## Related Repositories
+
+| Repo | Purpose | Relationship |
+|------|---------|--------------|
+| [sip-protocol](https://github.com/sip-protocol/sip-protocol) | Core SDK | Imports SDK |
+| [sip-app](https://github.com/sip-protocol/sip-app) | **Companion web app** | Same product family |
+| [docs-sip](https://github.com/sip-protocol/docs-sip) | Documentation | Documents usage |
+
+---
+
+**Last Updated:** 2026-01-28
+**Status:** v0.1.4 | dApp Store submitted | Native wallet complete | Seed Vault stub (pending native module)
+**Positioning:** Privacy in Your Pocket — consumers, daily use, native security
+**Companion:** sip-app ("Privacy Command Center" — enterprise, compliance, power users)
