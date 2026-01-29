@@ -262,6 +262,20 @@ src/stores/settings.ts           # privacyProvider state
 src/utils/keyStorage.ts          # SecureStore + biometric auth
 ```
 
+### Privacy Model (What's Actually Hidden)
+
+| Provider | Amount Hidden | Recipient Hidden | Sender Hidden |
+|----------|---------------|------------------|---------------|
+| **SIP Native** | ❌ Visible* | ✅ Stealth address | ❌ Visible |
+| **Arcium (Full MPC)** | ✅ Encrypted | ✅ Stealth address | ⚠️ Partial |
+| **Privacy Cash** | ✅ Fixed pools | ✅ Pool mixing | ✅ Pool mixing |
+| **ShadowWire** | ✅ Bulletproofs | ⚠️ Internal only | ⚠️ Internal only |
+| **C-SPL** | ✅ Token-2022 | ❌ Visible | ❌ Visible |
+
+*SIP Native uses Pedersen commitments for balance proofs, but native SOL transfers show balance changes on-chain. Amount is hidden in instruction data but visible in account balance deltas.
+
+**For TRUE amount privacy:** Use Arcium Full MPC, Privacy Cash (fixed pools), or C-SPL (Token-2022 Confidential Transfers).
+
 ### Compliance Layer (SIP's Differentiator)
 
 When using third-party providers (ShadowWire, Privacy Cash), SIP adds viewing keys on top:
