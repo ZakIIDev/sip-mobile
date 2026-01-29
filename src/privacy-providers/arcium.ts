@@ -59,6 +59,11 @@ interface ArciumSDK {
   }
   deserializeLE(bytes: Uint8Array): bigint
   randomBytes(length: number): Uint8Array
+  // MXE key fetching
+  getMXEPublicKey(
+    provider: { connection: Connection },
+    programId: PublicKey
+  ): Promise<Uint8Array | null>
 }
 
 // ============================================================================
@@ -97,6 +102,9 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
   private privateKey: Uint8Array | null = null
   private publicKey: Uint8Array | null = null
 
+  // MXE cluster's x25519 public key (fetched from chain)
+  private mxePublicKey: Uint8Array | null = null
+
   constructor(options: AdapterOptions) {
     this.options = options
   }
@@ -119,13 +127,56 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
       this.privateKey = this.sdk.x25519.utils.randomSecretKey()
       this.publicKey = this.sdk.x25519.getPublicKey(this.privateKey)
 
-      debug("Arcium: Adapter initialized with ephemeral keypair")
+      // Fetch MXE's x25519 public key from chain (required for proper encryption)
+      this.mxePublicKey = await this.fetchMXEPublicKey()
+
+      if (this.mxePublicKey) {
+        debug("Arcium: Adapter initialized with MXE public key")
+      } else {
+        debug("Arcium: Initialized without MXE key (will retry on use)")
+      }
+
       this.initialized = true
     } catch (err) {
       debug("Arcium SDK initialization failed:", err)
       // Still mark as initialized - will use fallback mode
       this.initialized = true
     }
+  }
+
+  /**
+   * Fetch MXE's x25519 public key with retries
+   * This key is required to properly encrypt inputs for the MPC cluster
+   */
+  private async fetchMXEPublicKey(
+    maxRetries: number = 5,
+    retryDelayMs: number = 500
+  ): Promise<Uint8Array | null> {
+    if (!this.sdk || !this.connection) {
+      return null
+    }
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const mxePublicKey = await this.sdk.getMXEPublicKey(
+          { connection: this.connection },
+          PROGRAM_ID
+        )
+        if (mxePublicKey) {
+          debug(`Arcium: Fetched MXE public key on attempt ${attempt}`)
+          return mxePublicKey
+        }
+      } catch (error) {
+        debug(`Arcium: Attempt ${attempt} failed to fetch MXE public key:`, error)
+      }
+
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs))
+      }
+    }
+
+    debug(`Arcium: Failed to fetch MXE public key after ${maxRetries} attempts`)
+    return null
   }
 
   isReady(): boolean {
@@ -175,26 +226,38 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
 
   /**
    * Encrypt a u64 value for MPC computation
+   *
+   * Uses x25519 ECDH to derive shared secret with MXE cluster.
+   * The MXE uses its private key + our public key to derive the same secret.
    */
-  private encryptU64(value: bigint): Uint8Array {
+  private async encryptU64(value: bigint): Promise<{ ciphertext: Uint8Array; nonce: Uint8Array }> {
     if (!this.sdk || !this.privateKey || !this.publicKey) {
       throw new Error("Arcium SDK not initialized")
     }
 
-    // Create shared secret with MXE (using our own pubkey as placeholder)
-    const sharedSecret = this.sdk.x25519.getSharedSecret(this.privateKey, this.publicKey)
+    // Ensure we have MXE public key (retry fetch if needed)
+    if (!this.mxePublicKey) {
+      this.mxePublicKey = await this.fetchMXEPublicKey()
+      if (!this.mxePublicKey) {
+        throw new Error("Failed to fetch MXE public key - cannot encrypt")
+      }
+    }
+
+    // Create shared secret with MXE cluster (ECDH: our private key + MXE public key)
+    const sharedSecret = this.sdk.x25519.getSharedSecret(this.privateKey, this.mxePublicKey)
     const cipher = new this.sdk.RescueCipher(sharedSecret)
     const nonce = this.sdk.randomBytes(16)
 
     const ciphertexts = cipher.encrypt([value], nonce)
 
     // Pack ciphertext into 32 bytes
-    const result = new Uint8Array(32)
+    const ciphertext = new Uint8Array(32)
     const flat = ciphertexts.flat()
     for (let i = 0; i < Math.min(flat.length, 32); i++) {
-      result[i] = flat[i]
+      ciphertext[i] = flat[i]
     }
-    return result
+
+    return { ciphertext, nonce }
   }
 
   /**
@@ -241,11 +304,11 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
       const computationOffset = this.generateComputationOffset()
       const senderBalance = BigInt(1_000_000_000) // Will be fetched from chain in production
 
-      // Encrypt inputs
-      debug("Arcium: Encrypting transfer inputs...")
-      const encryptedBalance = this.encryptU64(senderBalance)
-      const encryptedAmount = this.encryptU64(amountInSmallestUnit)
-      const encryptedMinBalance = this.encryptU64(MIN_BALANCE_LAMPORTS)
+      // Encrypt inputs (using MXE's public key for proper ECDH)
+      debug("Arcium: Encrypting transfer inputs with MXE key...")
+      const { ciphertext: encryptedBalance, nonce } = await this.encryptU64(senderBalance)
+      const { ciphertext: encryptedAmount } = await this.encryptU64(amountInSmallestUnit)
+      const { ciphertext: encryptedMinBalance } = await this.encryptU64(MIN_BALANCE_LAMPORTS)
 
       onStatusChange?.("signing")
 
@@ -262,6 +325,10 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
         PROGRAM_ID
       )
 
+      // Convert nonce to u128 for instruction (Arcium uses deserializeLE)
+      const nonceBuffer = Buffer.alloc(16)
+      nonce.forEach((byte, i) => nonceBuffer[i] = byte)
+
       // Build instruction data
       const instructionData = Buffer.concat([
         IX_DISCRIMINATORS.privateTransfer,
@@ -269,8 +336,8 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
         encryptedBalance,
         encryptedAmount,
         encryptedMinBalance,
-        this.publicKey!,
-        Buffer.from(new BigUint64Array([BigInt(Date.now())]).buffer), // nonce
+        this.publicKey!,  // Our public key so MXE can derive shared secret
+        nonceBuffer,      // Nonce used for encryption
       ])
 
       const instruction = new TransactionInstruction({
@@ -379,12 +446,12 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
       // Generate unique computation offset
       const computationOffset = this.generateComputationOffset()
 
-      // Encrypt swap validation inputs
-      debug("Arcium: Encrypting swap validation inputs...")
-      const encryptedInputBalance = this.encryptU64(inputAmount * BigInt(2)) // Assume 2x balance
-      const encryptedInputAmount = this.encryptU64(inputAmount)
-      const encryptedMinOutput = this.encryptU64(minOutput)
-      const encryptedActualOutput = this.encryptU64(outputAmount)
+      // Encrypt swap validation inputs (using MXE's public key for proper ECDH)
+      debug("Arcium: Encrypting swap validation inputs with MXE key...")
+      const { ciphertext: encryptedInputBalance, nonce } = await this.encryptU64(inputAmount * BigInt(2)) // Assume 2x balance
+      const { ciphertext: encryptedInputAmount } = await this.encryptU64(inputAmount)
+      const { ciphertext: encryptedMinOutput } = await this.encryptU64(minOutput)
+      const { ciphertext: encryptedActualOutput } = await this.encryptU64(outputAmount)
 
       onStatusChange?.("signing")
 
@@ -401,8 +468,11 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
         PROGRAM_ID
       )
 
+      // Convert nonce to u128 for instruction (Arcium uses deserializeLE)
+      const nonceBuffer = Buffer.alloc(16)
+      nonce.forEach((byte, i) => nonceBuffer[i] = byte)
+
       // Build instruction data for validate_swap
-      const nonce = BigInt(Date.now())
       const instructionData = Buffer.concat([
         IX_DISCRIMINATORS.validateSwap,
         Buffer.from(new BigUint64Array([computationOffset]).buffer),
@@ -410,8 +480,8 @@ export class ArciumAdapter implements PrivacyProviderAdapter {
         encryptedInputAmount,
         encryptedMinOutput,
         encryptedActualOutput,
-        this.publicKey!,
-        Buffer.from(new BigUint64Array([nonce]).buffer),
+        this.publicKey!,  // Our public key so MXE can derive shared secret
+        nonceBuffer,      // Nonce used for encryption
       ])
 
       const instruction = new TransactionInstruction({
