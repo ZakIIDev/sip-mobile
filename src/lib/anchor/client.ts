@@ -7,6 +7,7 @@
 
 import { web3 } from "@coral-xyz/anchor"
 import { Connection, PublicKey, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js"
+import { debug } from "@/utils/logger"
 import {
   SIP_PRIVACY_PROGRAM_ID,
   getConfigPda,
@@ -85,7 +86,7 @@ export class SipPrivacyClient {
       const accountInfo = await this.connection.getAccountInfo(configPda)
 
       if (!accountInfo) {
-        console.log("Config account not found")
+        debug("Config account not found")
         return null
       }
 
@@ -177,11 +178,11 @@ export class SipPrivacyClient {
         privateKey: params.ephemeralPrivateKey,
         publicKey,
       }
-      console.log("Using provided ephemeral key for stealth transfer")
+      debug("Using provided ephemeral key for stealth transfer")
     } else {
       // Generate new ephemeral keypair (only for non-stealth transfers)
       ephemeralKeyPair = await generateEphemeralKeyPair()
-      console.log("Generated new ephemeral key (no pre-generated key provided)")
+      debug("Generated new ephemeral key (no pre-generated key provided)")
     }
 
     // Derive shared secret for amount encryption
@@ -539,7 +540,7 @@ export async function fetchAllTransferRecords(
       ],
     })
 
-    console.log(`Found ${accounts.length} transfer record accounts`)
+    debug(`Found ${accounts.length} transfer record accounts`)
 
     const records: TransferRecordData[] = []
 

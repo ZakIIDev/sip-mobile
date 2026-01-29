@@ -12,6 +12,7 @@ import { sha256 } from "@noble/hashes/sha256"
 import { sha512 } from "@noble/hashes/sha512"
 import * as Crypto from "expo-crypto"
 import bs58 from "bs58"
+import { debug } from "@/utils/logger"
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -241,8 +242,8 @@ export function checkStealthAddress(
   const viewingPrivBytes = hexToBytes(viewingPrivateKey)
   const ephemeralPubBytes = hexToBytes(stealthAddress.ephemeralPublicKey)
 
-  console.log("[checkStealth] Ephemeral pubkey bytes:", ephemeralPubBytes.length)
-  console.log("[checkStealth] Expected viewTag:", stealthAddress.viewTag)
+  debug("[checkStealth] Ephemeral pubkey bytes:", ephemeralPubBytes.length)
+  debug("[checkStealth] Expected viewTag:", stealthAddress.viewTag)
 
   // Get spending scalar and reduce mod L
   const rawSpendingScalar = getEd25519Scalar(spendingPrivBytes)
@@ -255,11 +256,11 @@ export function checkStealthAddress(
   // Hash the shared secret
   const sharedSecretHash = sha256(sharedSecretPoint.toRawBytes())
 
-  console.log("[checkStealth] Computed viewTag:", sharedSecretHash[0])
+  debug("[checkStealth] Computed viewTag:", sharedSecretHash[0])
 
   // View tag check
   if (sharedSecretHash[0] !== stealthAddress.viewTag) {
-    console.log("[checkStealth] View tag MISMATCH!")
+    debug("[checkStealth] View tag MISMATCH!")
     return false
   }
 
@@ -279,9 +280,9 @@ export function checkStealthAddress(
 
   const expected = bytesToHex(expectedPubKeyBytes)
   const provided = bytesToHex(providedAddress)
-  console.log("[checkStealth] Expected:", expected.slice(0, 16) + "...")
-  console.log("[checkStealth] Provided:", provided.slice(0, 16) + "...")
-  console.log("[checkStealth] Match:", expected === provided)
+  debug("[checkStealth] Expected:", expected.slice(0, 16) + "...")
+  debug("[checkStealth] Provided:", provided.slice(0, 16) + "...")
+  debug("[checkStealth] Match:", expected === provided)
 
   return expected === provided
 }
