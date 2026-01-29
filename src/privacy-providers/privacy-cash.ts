@@ -209,13 +209,64 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
       return { isValid: false, type: "invalid", error: "Address is required" }
     }
 
+    const trimmed = address.trim()
+
+    // Check for SIP stealth address format: sip:solana:<spending>:<viewing>
+    const STEALTH_REGEX = /^sip:solana:[1-9A-HJ-NP-Za-km-z]{32,44}:[1-9A-HJ-NP-Za-km-z]{32,44}$/
+    if (STEALTH_REGEX.test(trimmed)) {
+      return { isValid: true, type: "stealth" }
+    }
+
     // Privacy Cash uses standard Solana addresses
     const SOLANA_ADDRESS_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
-    if (SOLANA_ADDRESS_REGEX.test(address.trim())) {
+    if (SOLANA_ADDRESS_REGEX.test(trimmed)) {
       return { isValid: true, type: "pool" }
     }
 
     return { isValid: false, type: "invalid", error: "Invalid Solana address" }
+  }
+
+  /**
+   * Fallback to SIP Native shielded transfer when Privacy Cash SDK is not available
+   * This provides stealth address privacy but not pool-based mixing
+   */
+  private async sendWithSipNativeFallback(
+    params: PrivacySendParams,
+    signTransaction: (tx: Uint8Array) => Promise<Uint8Array | null>,
+    onStatusChange?: (status: PrivacySendStatus) => void
+  ): Promise<PrivacySendResult> {
+    try {
+      // Import SIP Native adapter dynamically
+      const { SipNativeAdapter } = await import("./sip-native")
+      const sipNative = new SipNativeAdapter(this.options)
+      await sipNative.initialize()
+
+      debug("Privacy Cash: Using SIP Native fallback for transfer")
+
+      // Delegate to SIP Native
+      const result = await sipNative.send(params, signTransaction, onStatusChange)
+
+      // Add note that this used fallback
+      if (result.success) {
+        return {
+          ...result,
+          providerData: {
+            ...result.providerData,
+            provider: "privacy-cash",
+            fallback: true,
+            note: "Used SIP Native fallback (Privacy Cash SDK unavailable in React Native)",
+          },
+        }
+      }
+
+      return result
+    } catch (err) {
+      onStatusChange?.("error")
+      return {
+        success: false,
+        error: `Fallback failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+      }
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -224,22 +275,16 @@ export class PrivacyCashAdapter implements PrivacyProviderAdapter {
 
   async send(
     params: PrivacySendParams,
-    _signTransaction: (tx: Uint8Array) => Promise<Uint8Array | null>,
+    signTransaction: (tx: Uint8Array) => Promise<Uint8Array | null>,
     onStatusChange?: (status: PrivacySendStatus) => void
   ): Promise<PrivacySendResult> {
     onStatusChange?.("validating")
 
-    // Check if SDK is loaded
+    // FALLBACK: If Privacy Cash SDK not available, use SIP Native shielded transfer
+    // This provides stealth address privacy but not pool-based mixing
     if (!this.PrivacyCashClass) {
-      onStatusChange?.("error")
-      return {
-        success: false,
-        error: "Privacy Cash SDK not loaded. Please try again.",
-        providerData: {
-          status: "sdk_not_loaded",
-          package: "privacycash@1.1.11",
-        },
-      }
+      debug("Privacy Cash: SDK not available, falling back to SIP Native shielded transfer")
+      return this.sendWithSipNativeFallback(params, signTransaction, onStatusChange)
     }
 
     let secretKey: Uint8Array | null = null
