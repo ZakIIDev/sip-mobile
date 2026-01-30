@@ -22,6 +22,16 @@ import { router } from "expo-router"
 import * as Clipboard from "expo-clipboard"
 import { useState, useCallback } from "react"
 import QRCode from "react-native-qrcode-svg"
+import {
+  ArrowsClockwise,
+  Check,
+  ClipboardText,
+  Export,
+  LockKey,
+  MagnifyingGlass,
+  ArrowRight,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 import { useStealth } from "@/hooks/useStealth"
 import { useWalletStore } from "@/stores/wallet"
 import { usePrivacyStore } from "@/stores/privacy"
@@ -137,10 +147,10 @@ export default function ReceiveScreen() {
         <EmptyState
           title="Connect Wallet"
           message="Connect your wallet to generate a stealth address"
-          icon="wallet-outline"
-          iconColor="#8b5cf6"
+          iconName="wallet"
+          iconColor="brand"
           actionLabel="Set Up Wallet"
-          onAction={() => router.push("/wallet-setup")}
+          onAction={() => router.push("/(auth)/wallet-setup")}
           className="flex-1"
         />
       </SafeAreaView>
@@ -261,13 +271,13 @@ export default function ReceiveScreen() {
               <TouchableOpacity
                 onPress={handleRegeneratePress}
                 disabled={isGenerating}
-                className="flex-row items-center"
+                className="flex-row items-center gap-1"
               >
                 {isGenerating ? (
                   <ActivityIndicator size="small" color="#8b5cf6" />
                 ) : (
                   <>
-                    <Text className="text-brand-400 text-sm mr-1">🔄</Text>
+                    <ArrowsClockwise size={16} color={ICON_COLORS.brand} weight="regular" />
                     <Text className="text-brand-400 text-sm">New Address</Text>
                   </>
                 )}
@@ -294,30 +304,36 @@ export default function ReceiveScreen() {
           <View className="flex-row gap-3 mt-6">
             <TouchableOpacity
               testID="copy-address-button"
-              className={`flex-1 py-4 rounded-xl items-center ${
+              className={`flex-1 py-4 rounded-xl items-center flex-row justify-center gap-2 ${
                 copied ? "bg-green-600" : "bg-dark-800"
               }`}
               onPress={handleCopy}
               disabled={!stealthAddress}
             >
+              {copied ? (
+                <Check size={20} color={ICON_COLORS.white} weight="bold" />
+              ) : (
+                <ClipboardText size={20} color={ICON_COLORS.white} weight="regular" />
+              )}
               <Text className="text-white font-semibold">
-                {copied ? "✓ Copied" : "📋 Copy"}
+                {copied ? "Copied" : "Copy"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               testID="share-address-button"
-              className="flex-1 bg-brand-600 py-4 rounded-xl items-center"
+              className="flex-1 bg-brand-600 py-4 rounded-xl items-center flex-row justify-center gap-2"
               onPress={handleShare}
               disabled={!stealthAddress}
             >
-              <Text className="text-white font-semibold">📤 Share</Text>
+              <Export size={20} color={ICON_COLORS.white} weight="regular" />
+              <Text className="text-white font-semibold">Share</Text>
             </TouchableOpacity>
           </View>
 
           {/* Privacy Info Card */}
           <View className="mt-6 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
             <View className="flex-row items-start gap-3">
-              <Text className="text-xl">🔒</Text>
+              <LockKey size={24} color={ICON_COLORS.brand} weight="fill" />
               <View className="flex-1">
                 <Text className="text-brand-400 font-medium">
                   One-time stealth address
@@ -336,7 +352,7 @@ export default function ReceiveScreen() {
             onPress={() => router.push("/scan")}
           >
             <View className="w-10 h-10 bg-brand-900/30 rounded-full items-center justify-center">
-              <Text className="text-lg">🔍</Text>
+              <MagnifyingGlass size={20} color={ICON_COLORS.brand} weight="regular" />
             </View>
             <View className="flex-1 ml-3">
               <Text className="text-white font-medium">Scan for Payments</Text>
@@ -344,7 +360,7 @@ export default function ReceiveScreen() {
                 Check for incoming stealth payments
               </Text>
             </View>
-            <Text className="text-dark-600 text-2xl">→</Text>
+            <ArrowRight size={24} color={ICON_COLORS.dark} weight="regular" />
           </TouchableOpacity>
 
           {/* How It Works Section */}

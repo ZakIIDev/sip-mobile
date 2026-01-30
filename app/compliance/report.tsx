@@ -21,6 +21,13 @@ import { useState, useCallback } from "react"
 import { useCompliance } from "@/hooks"
 import { useToastStore } from "@/stores/toast"
 import type { ReportConfig } from "@/stores"
+import {
+  ArrowLeft,
+  CurrencyDollar,
+  Key,
+  ClipboardText,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // TYPES
@@ -78,7 +85,7 @@ function OptionChip({ label, selected, onPress }: OptionChipProps) {
 }
 
 interface ToggleOptionProps {
-  icon: string
+  icon: React.ReactNode
   label: string
   description: string
   enabled: boolean
@@ -92,7 +99,7 @@ function ToggleOption({ icon, label, description, enabled, onToggle }: ToggleOpt
       onPress={onToggle}
     >
       <View className="flex-row items-center flex-1">
-        <Text className="text-2xl mr-3">{icon}</Text>
+        <View className="mr-3">{icon}</View>
         <View className="flex-1">
           <Text className="text-white font-medium">{label}</Text>
           <Text className="text-dark-400 text-sm">{description}</Text>
@@ -206,7 +213,7 @@ export default function ReportGenerationScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 border-b border-dark-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2 -ml-2">
-          <Text className="text-2xl">←</Text>
+          <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
         </TouchableOpacity>
         <Text className="text-white text-xl font-bold">Generate Report</Text>
       </View>
@@ -263,21 +270,21 @@ export default function ReportGenerationScreen() {
 
             <View className="bg-dark-900 rounded-xl px-4">
               <ToggleOption
-                icon="💸"
+                icon={<CurrencyDollar size={24} color={ICON_COLORS.muted} weight="fill" />}
                 label="Transactions"
                 description="Payment and swap history"
                 enabled={includeTransactions}
                 onToggle={() => setIncludeTransactions(!includeTransactions)}
               />
               <ToggleOption
-                icon="🔑"
+                icon={<Key size={24} color={ICON_COLORS.muted} weight="fill" />}
                 label="Disclosures"
                 description="Viewing key sharing history"
                 enabled={includeDisclosures}
                 onToggle={() => setIncludeDisclosures(!includeDisclosures)}
               />
               <ToggleOption
-                icon="📋"
+                icon={<ClipboardText size={24} color={ICON_COLORS.muted} weight="fill" />}
                 label="Audit Trail"
                 description="All compliance events"
                 enabled={includeAuditTrail}

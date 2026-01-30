@@ -21,6 +21,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { useState } from "react"
+import {
+  ArrowLeft,
+  Camera,
+  Clock,
+  Eye,
+  EyeSlash,
+  FaceMask,
+  Fingerprint,
+  Key,
+  Lock,
+  Numpad,
+  PaperPlaneTilt,
+  Shield,
+  Timer,
+  Trash,
+  Coins,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 import { useBiometrics } from "@/hooks/useBiometrics"
 import {
   useSecurityStore,
@@ -41,16 +60,16 @@ type BiometricIconType = "facial" | "fingerprint" | "iris" | "none"
 // HELPERS
 // ============================================================================
 
-function getBiometricIcon(type: BiometricIconType): string {
+function getBiometricIcon(type: BiometricIconType): PhosphorIcon {
   switch (type) {
     case "facial":
-      return "🪪"
+      return FaceMask
     case "fingerprint":
-      return "👆"
+      return Fingerprint
     case "iris":
-      return "👁️"
+      return Eye
     default:
-      return "🔐"
+      return Lock
   }
 }
 
@@ -72,7 +91,8 @@ function getBiometricName(type: BiometricIconType): string {
 // ============================================================================
 
 interface SettingRowProps {
-  icon: string
+  Icon: PhosphorIcon
+  iconColor?: string
   title: string
   subtitle?: string
   value?: boolean
@@ -82,7 +102,8 @@ interface SettingRowProps {
 }
 
 function SettingRow({
-  icon,
+  Icon,
+  iconColor = ICON_COLORS.muted,
   title,
   subtitle,
   value,
@@ -96,7 +117,9 @@ function SettingRow({
         disabled ? "opacity-50" : ""
       }`}
     >
-      <Text className="text-2xl mr-4">{icon}</Text>
+      <View className="mr-4">
+        <Icon size={24} color={iconColor} weight="regular" />
+      </View>
       <View className="flex-1">
         <Text className="text-white font-medium">{title}</Text>
         {subtitle && <Text className="text-dark-500 text-sm">{subtitle}</Text>}
@@ -281,12 +304,14 @@ export default function SecurityScreen() {
             className="flex-row items-center"
             onPress={() => router.back()}
           >
-            <Text className="text-2xl text-white">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="regular" />
             <Text className="text-white ml-4 text-lg">Back</Text>
           </TouchableOpacity>
         </View>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-5xl mb-4">🔐</Text>
+          <View className="w-20 h-20 bg-brand-900/30 rounded-full items-center justify-center mb-4">
+            <Lock size={40} color={ICON_COLORS.brand} weight="fill" />
+          </View>
           <Text className="text-white font-semibold text-lg">Connect Wallet</Text>
           <Text className="text-dark-500 text-center mt-2">
             Connect your wallet to configure security settings
@@ -321,7 +346,7 @@ export default function SecurityScreen() {
           className="flex-row items-center"
           onPress={() => router.back()}
         >
-          <Text className="text-2xl text-white">←</Text>
+          <ArrowLeft size={24} color={ICON_COLORS.white} weight="regular" />
           <Text className="text-white ml-4 text-lg">Back</Text>
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Security</Text>
@@ -337,7 +362,8 @@ export default function SecurityScreen() {
             </Text>
             <View className="bg-dark-900 rounded-xl border border-dark-800 px-4">
               <SettingRow
-                icon={getBiometricIcon(biometricType)}
+                Icon={getBiometricIcon(biometricType)}
+                iconColor={ICON_COLORS.brand}
                 title={`Enable ${getBiometricName(biometricType)}`}
                 subtitle={
                   capabilities?.isAvailable
@@ -354,21 +380,24 @@ export default function SecurityScreen() {
               {biometricsEnabled && (
                 <>
                   <SettingRow
-                    icon="📤"
+                    Icon={PaperPlaneTilt}
+                    iconColor={ICON_COLORS.cyan}
                     title="Require for sending"
                     subtitle="Authenticate before sending payments"
                     value={requireBiometricsForSend}
                     onValueChange={(v) => setRequireBiometrics("send", v)}
                   />
                   <SettingRow
-                    icon="💰"
+                    Icon={Coins}
+                    iconColor={ICON_COLORS.warning}
                     title="Require for claiming"
                     subtitle="Authenticate before claiming payments"
                     value={requireBiometricsForClaim}
                     onValueChange={(v) => setRequireBiometrics("claim", v)}
                   />
                   <SettingRow
-                    icon="🔑"
+                    Icon={Key}
+                    iconColor={ICON_COLORS.orange}
                     title="Require for key export"
                     subtitle="Authenticate before exporting viewing keys"
                     value={requireBiometricsForExport}
@@ -386,7 +415,8 @@ export default function SecurityScreen() {
             </Text>
             <View className="bg-dark-900 rounded-xl border border-dark-800 px-4">
               <SettingRow
-                icon="🔢"
+                Icon={Numpad}
+                iconColor={ICON_COLORS.info}
                 title={pinEnabled ? "Change PIN" : "Set PIN"}
                 subtitle={
                   pinEnabled
@@ -397,7 +427,8 @@ export default function SecurityScreen() {
               />
               {pinEnabled && (
                 <SettingRow
-                  icon="🗑️"
+                  Icon={Trash}
+                  iconColor={ICON_COLORS.error}
                   title="Remove PIN"
                   subtitle="Disable PIN authentication"
                   onPress={handleClearPin}
@@ -413,7 +444,8 @@ export default function SecurityScreen() {
             </Text>
             <View className="bg-dark-900 rounded-xl border border-dark-800 px-4">
               <SettingRow
-                icon="⏱️"
+                Icon={Timer}
+                iconColor={ICON_COLORS.cyan}
                 title="Auto-lock"
                 subtitle="Lock app after inactivity"
                 value={autoLockEnabled}
@@ -421,7 +453,8 @@ export default function SecurityScreen() {
               />
               {autoLockEnabled && (
                 <SettingRow
-                  icon="🕐"
+                  Icon={Clock}
+                  iconColor={ICON_COLORS.muted}
                   title="Lock after"
                   subtitle={formatAutoLockTimeout(autoLockTimeout)}
                   onPress={() => setShowTimeoutModal(true)}
@@ -437,14 +470,16 @@ export default function SecurityScreen() {
             </Text>
             <View className="bg-dark-900 rounded-xl border border-dark-800 px-4">
               <SettingRow
-                icon="🙈"
+                Icon={EyeSlash}
+                iconColor={ICON_COLORS.warning}
                 title="Hide balance in background"
                 subtitle="Blur balance when app is in background"
                 value={hideBalanceOnBackground}
                 onValueChange={setHideBalanceOnBackground}
               />
               <SettingRow
-                icon="📵"
+                Icon={Camera}
+                iconColor={ICON_COLORS.error}
                 title="Screenshot protection"
                 subtitle="Prevent screenshots of sensitive screens"
                 value={screenshotProtection}
@@ -456,7 +491,7 @@ export default function SecurityScreen() {
           {/* Info Card */}
           <View className="mt-6 mb-8 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
             <View className="flex-row items-start gap-3">
-              <Text className="text-xl">🛡️</Text>
+              <Shield size={24} color={ICON_COLORS.brand} weight="fill" />
               <View className="flex-1">
                 <Text className="text-brand-400 font-medium">
                   Your keys are secure

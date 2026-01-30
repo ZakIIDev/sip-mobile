@@ -19,12 +19,19 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from "react-native-reanimated"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import {
+  LockSimple,
+  Ghost,
+  Key,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 const { width } = Dimensions.get("window")
 
 interface OnboardingSlide {
   id: string
-  emoji: string
+  icon: PhosphorIcon
   title: string
   description: string
   color: string
@@ -33,7 +40,7 @@ interface OnboardingSlide {
 const SLIDES: OnboardingSlide[] = [
   {
     id: "1",
-    emoji: "🔒",
+    icon: LockSimple,
     title: "Private Payments",
     description:
       "Send and receive SOL privately. Your amounts and recipients are hidden from the public blockchain.",
@@ -41,7 +48,7 @@ const SLIDES: OnboardingSlide[] = [
   },
   {
     id: "2",
-    emoji: "👻",
+    icon: Ghost,
     title: "Stealth Addresses",
     description:
       "Generate one-time addresses for each transaction. No one can link your payments together.",
@@ -49,7 +56,7 @@ const SLIDES: OnboardingSlide[] = [
   },
   {
     id: "3",
-    emoji: "🔑",
+    icon: Key,
     title: "Viewing Keys",
     description:
       "Share selective disclosure keys with auditors when needed. Privacy with compliance.",
@@ -90,6 +97,7 @@ export default function OnboardingScreen() {
   }
 
   const renderSlide = ({ item }: { item: OnboardingSlide; index: number }) => {
+    const IconComponent = item.icon
     return (
       <View style={{ width }} className="items-center px-8">
         {/* Icon */}
@@ -97,7 +105,7 @@ export default function OnboardingScreen() {
           className="w-32 h-32 rounded-3xl items-center justify-center mb-8"
           style={{ backgroundColor: `${item.color}20` }}
         >
-          <Text className="text-6xl">{item.emoji}</Text>
+          <IconComponent size={64} color={item.color} weight="fill" />
         </View>
 
         {/* Title */}

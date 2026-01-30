@@ -7,8 +7,20 @@
 
 import { View, Text, TouchableOpacity, ScrollView } from "react-native"
 import { useState } from "react"
+import {
+  ShieldCheck,
+  DeviceMobile,
+  Ghost,
+  Wallet,
+  Check,
+  Plus,
+  GearSix,
+  CaretDown,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
 import { useWalletStore, formatAddress } from "@/stores/wallet"
 import { Modal } from "@/components/ui"
+import { ICON_COLORS } from "@/constants/icons"
 import type { StoredAccount } from "@/types"
 
 interface AccountSwitcherProps {
@@ -27,16 +39,16 @@ export function AccountSwitcher({ onAddAccount, onManageAccounts }: AccountSwitc
     setIsOpen(false)
   }
 
-  const getProviderIcon = (providerType: string): string => {
+  const getProviderIcon = (providerType: string): PhosphorIcon => {
     switch (providerType) {
       case "privy":
-        return "🔐"
+        return ShieldCheck
       case "mwa":
-        return "📱"
+        return DeviceMobile
       case "phantom":
-        return "👻"
+        return Ghost
       default:
-        return "💳"
+        return Wallet
     }
   }
 
@@ -57,6 +69,8 @@ export function AccountSwitcher({ onAddAccount, onManageAccounts }: AccountSwitc
     return null
   }
 
+  const ActiveIcon = getProviderIcon(activeAccount.providerType)
+
   return (
     <>
       {/* Trigger Button */}
@@ -64,8 +78,8 @@ export function AccountSwitcher({ onAddAccount, onManageAccounts }: AccountSwitc
         className="flex-row items-center bg-dark-900 rounded-xl px-3 py-2"
         onPress={() => setIsOpen(true)}
       >
-        <Text className="text-lg mr-2">{getProviderIcon(activeAccount.providerType)}</Text>
-        <View className="flex-1">
+        <ActiveIcon size={20} color={ICON_COLORS.brand} weight="regular" />
+        <View className="flex-1 ml-2">
           <Text className="text-white font-medium text-sm" numberOfLines={1}>
             {activeAccount.nickname}
           </Text>
@@ -78,46 +92,51 @@ export function AccountSwitcher({ onAddAccount, onManageAccounts }: AccountSwitc
             <Text className="text-white text-xs font-bold">{accounts.length}</Text>
           </View>
         )}
-        <Text className="text-dark-600 ml-2">▼</Text>
+        <View className="ml-2">
+          <CaretDown size={16} color={ICON_COLORS.dark} weight="bold" />
+        </View>
       </TouchableOpacity>
 
       {/* Account Selector Modal */}
       <Modal visible={isOpen} onClose={() => setIsOpen(false)} title="Switch Account">
         <ScrollView className="max-h-80">
-          {accounts.map((account) => (
-            <TouchableOpacity
-              key={account.id}
-              className={`flex-row items-center p-4 rounded-xl mb-2 ${
-                account.id === activeAccountId
-                  ? "bg-brand-900/30 border border-brand-700"
-                  : "bg-dark-900 border border-dark-800"
-              }`}
-              onPress={() => handleSelectAccount(account)}
-            >
-              <View className="w-10 h-10 bg-dark-800 rounded-xl items-center justify-center">
-                <Text className="text-xl">{getProviderIcon(account.providerType)}</Text>
-              </View>
-              <View className="flex-1 ml-3">
-                <View className="flex-row items-center">
-                  <Text className="text-white font-semibold">{account.nickname}</Text>
-                  {account.id === activeAccountId && (
-                    <View className="ml-2 px-2 py-0.5 bg-brand-600 rounded">
-                      <Text className="text-xs text-white">Active</Text>
-                    </View>
-                  )}
+          {accounts.map((account) => {
+            const ProviderIcon = getProviderIcon(account.providerType)
+            return (
+              <TouchableOpacity
+                key={account.id}
+                className={`flex-row items-center p-4 rounded-xl mb-2 ${
+                  account.id === activeAccountId
+                    ? "bg-brand-900/30 border border-brand-700"
+                    : "bg-dark-900 border border-dark-800"
+                }`}
+                onPress={() => handleSelectAccount(account)}
+              >
+                <View className="w-10 h-10 bg-dark-800 rounded-xl items-center justify-center">
+                  <ProviderIcon size={24} color={ICON_COLORS.brand} weight="regular" />
                 </View>
-                <Text className="text-dark-500 text-sm">
-                  {formatAddress(account.address)}
-                </Text>
-                <Text className="text-dark-600 text-xs mt-0.5">
-                  {getProviderLabel(account.providerType)} • {account.chain}
-                </Text>
-              </View>
-              {account.id === activeAccountId && (
-                <Text className="text-brand-500 text-xl">✓</Text>
-              )}
-            </TouchableOpacity>
-          ))}
+                <View className="flex-1 ml-3">
+                  <View className="flex-row items-center">
+                    <Text className="text-white font-semibold">{account.nickname}</Text>
+                    {account.id === activeAccountId && (
+                      <View className="ml-2 px-2 py-0.5 bg-brand-600 rounded">
+                        <Text className="text-xs text-white">Active</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-dark-500 text-sm">
+                    {formatAddress(account.address)}
+                  </Text>
+                  <Text className="text-dark-600 text-xs mt-0.5">
+                    {getProviderLabel(account.providerType)} • {account.chain}
+                  </Text>
+                </View>
+                {account.id === activeAccountId && (
+                  <Check size={24} color={ICON_COLORS.brand} weight="bold" />
+                )}
+              </TouchableOpacity>
+            )
+          })}
         </ScrollView>
 
         {/* Actions */}
@@ -131,7 +150,7 @@ export function AccountSwitcher({ onAddAccount, onManageAccounts }: AccountSwitc
               }}
             >
               <View className="w-8 h-8 bg-brand-600/20 rounded-lg items-center justify-center">
-                <Text className="text-brand-500 text-lg">+</Text>
+                <Plus size={20} color={ICON_COLORS.brand} weight="bold" />
               </View>
               <Text className="text-brand-400 font-medium ml-3">Add Another Account</Text>
             </TouchableOpacity>
@@ -146,7 +165,7 @@ export function AccountSwitcher({ onAddAccount, onManageAccounts }: AccountSwitc
               }}
             >
               <View className="w-8 h-8 bg-dark-800 rounded-lg items-center justify-center">
-                <Text className="text-dark-400 text-lg">⚙️</Text>
+                <GearSix size={20} color={ICON_COLORS.muted} weight="regular" />
               </View>
               <Text className="text-dark-400 font-medium ml-3">Manage Accounts</Text>
             </TouchableOpacity>

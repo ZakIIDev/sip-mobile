@@ -25,6 +25,21 @@ import { usePrivacyStore } from "@/stores/privacy"
 import { useToastStore } from "@/stores/toast"
 import { Button } from "@/components/ui"
 import type { PaymentRecord, PrivacyLevel } from "@/types"
+import {
+  ArrowLeft,
+  ArrowDown,
+  ArrowUp,
+  ShieldCheck,
+  Lock,
+  Eye,
+  MagnifyingGlass,
+  ShareNetwork,
+  Check,
+  Clock,
+  X,
+  Question,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // HELPERS
@@ -50,26 +65,26 @@ function formatAddress(address: string): string {
 function getStatusInfo(status: PaymentRecord["status"]) {
   switch (status) {
     case "completed":
-      return { color: "bg-green-600", textColor: "text-green-400", label: "Completed", icon: "✓" }
+      return { color: "bg-green-600", textColor: "text-green-400", label: "Completed", icon: Check }
     case "claimed":
-      return { color: "bg-green-600", textColor: "text-green-400", label: "Claimed", icon: "✓" }
+      return { color: "bg-green-600", textColor: "text-green-400", label: "Claimed", icon: Check }
     case "pending":
-      return { color: "bg-yellow-600", textColor: "text-yellow-400", label: "Pending", icon: "⏳" }
+      return { color: "bg-yellow-600", textColor: "text-yellow-400", label: "Pending", icon: Clock }
     case "failed":
-      return { color: "bg-red-600", textColor: "text-red-400", label: "Failed", icon: "✕" }
+      return { color: "bg-red-600", textColor: "text-red-400", label: "Failed", icon: X }
     default:
-      return { color: "bg-dark-600", textColor: "text-dark-400", label: status, icon: "?" }
+      return { color: "bg-dark-600", textColor: "text-dark-400", label: status, icon: Question }
   }
 }
 
 function getPrivacyInfo(level: PrivacyLevel) {
   switch (level) {
     case "shielded":
-      return { icon: "🔒", label: "Private", description: "Amount and recipient hidden" }
+      return { icon: ShieldCheck, label: "Private", description: "Amount and recipient hidden" }
     case "compliant":
-      return { icon: "🔐", label: "Compliant", description: "Private with viewing key" }
+      return { icon: Lock, label: "Compliant", description: "Private with viewing key" }
     case "transparent":
-      return { icon: "🔓", label: "Public", description: "Fully visible on-chain" }
+      return { icon: Eye, label: "Public", description: "Fully visible on-chain" }
   }
 }
 
@@ -88,7 +103,9 @@ export default function TransactionDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-dark-950">
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-5xl mb-4">🔍</Text>
+          <View className="w-20 h-20 rounded-full bg-dark-800 items-center justify-center mb-4">
+            <MagnifyingGlass size={40} color={ICON_COLORS.inactive} weight="bold" />
+          </View>
           <Text className="text-white font-semibold text-lg">
             Transaction Not Found
           </Text>
@@ -186,7 +203,7 @@ export default function TransactionDetailScreen() {
           className="flex-row items-center"
           onPress={() => router.back()}
         >
-          <Text className="text-2xl text-white">←</Text>
+          <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           <Text className="text-white ml-4 text-lg">Back</Text>
         </TouchableOpacity>
       </View>
@@ -199,7 +216,11 @@ export default function TransactionDetailScreen() {
               isReceive ? "bg-green-900/30" : "bg-brand-900/30"
             }`}
           >
-            <Text className="text-3xl">{isReceive ? "↓" : "↑"}</Text>
+            {isReceive ? (
+              <ArrowDown size={32} color={ICON_COLORS.success} weight="bold" />
+            ) : (
+              <ArrowUp size={32} color={ICON_COLORS.brand} weight="bold" />
+            )}
           </View>
 
           <Text
@@ -231,8 +252,8 @@ export default function TransactionDetailScreen() {
           <View className="flex-row justify-between items-center p-4 border-b border-dark-800">
             <Text className="text-dark-500">Privacy Level</Text>
             <View className="flex-row items-center">
-              <Text className="mr-2">{privacyInfo.icon}</Text>
-              <Text className="text-white font-medium">{privacyInfo.label}</Text>
+              <privacyInfo.icon size={18} color={ICON_COLORS.brand} weight="fill" />
+              <Text className="text-white font-medium ml-2">{privacyInfo.label}</Text>
             </View>
           </View>
 
@@ -295,7 +316,7 @@ export default function TransactionDetailScreen() {
         {/* Privacy Info */}
         <View className="mt-6 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
           <View className="flex-row items-start gap-3">
-            <Text className="text-xl">{privacyInfo.icon}</Text>
+            <privacyInfo.icon size={24} color={ICON_COLORS.brand} weight="fill" />
             <View className="flex-1">
               <Text className="text-brand-400 font-medium">
                 {privacyInfo.label} Transaction
@@ -332,8 +353,8 @@ export default function TransactionDetailScreen() {
             className="flex-row items-center justify-center py-3"
             onPress={handleShare}
           >
-            <Text className="text-dark-400 mr-2">📤</Text>
-            <Text className="text-dark-400">Share Details</Text>
+            <ShareNetwork size={18} color={ICON_COLORS.inactive} weight="fill" />
+            <Text className="text-dark-400 ml-2">Share Details</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

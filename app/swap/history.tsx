@@ -23,6 +23,16 @@ import { useSwapStore } from "@/stores/swap"
 import { useToastStore } from "@/stores/toast"
 import { Modal } from "@/components/ui"
 import type { SwapRecord } from "@/types"
+import {
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  ClipboardText,
+  LockOpen,
+  ChartBar,
+  Trash,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // TYPES
@@ -112,16 +122,21 @@ function SwapItem({ swap, onPress }: SwapItemProps) {
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center">
           <Text className="text-xl">{getTokenIcon(swap.fromToken)}</Text>
-          <Text className="text-dark-400 mx-2">→</Text>
+          <ArrowRight size={16} color={ICON_COLORS.inactive} weight="bold" />
           <Text className="text-xl">{getTokenIcon(swap.toToken)}</Text>
         </View>
 
         <View className="flex-row items-center gap-2">
           {/* Privacy badge */}
           {(isShielded || isCompliant) && (
-            <View className="bg-brand-900/30 px-2 py-0.5 rounded">
-              <Text className="text-brand-400 text-xs">
-                {isShielded ? "🔒" : "📋"} {isShielded ? "Private" : "Compliant"}
+            <View className="bg-brand-900/30 px-2 py-0.5 rounded flex-row items-center">
+              {isShielded ? (
+                <ShieldCheck size={12} color={ICON_COLORS.brand} weight="fill" />
+              ) : (
+                <ClipboardText size={12} color={ICON_COLORS.brand} weight="fill" />
+              )}
+              <Text className="text-brand-400 text-xs ml-1">
+                {isShielded ? "Private" : "Compliant"}
               </Text>
             </View>
           )}
@@ -289,7 +304,9 @@ export default function SwapHistoryScreen() {
   const ListEmptyComponent = useMemo(
     () => (
       <View className="items-center py-16">
-        <Text className="text-6xl mb-4">📊</Text>
+        <View className="w-24 h-24 rounded-full bg-dark-800 items-center justify-center mb-4">
+          <ChartBar size={48} color={ICON_COLORS.inactive} weight="fill" />
+        </View>
         <Text className="text-white text-xl font-semibold mb-2">
           No Swap History
         </Text>
@@ -318,7 +335,7 @@ export default function SwapHistoryScreen() {
             onPress={() => router.back()}
             className="mr-3 p-2 -ml-2"
           >
-            <Text className="text-2xl">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Swap History</Text>
         </View>
@@ -393,7 +410,7 @@ export default function SwapHistoryScreen() {
                     {formatAmount(selectedSwap.fromAmount, selectedSwap.fromToken)}
                   </Text>
                 </View>
-                <Text className="text-dark-500 text-3xl mx-6">→</Text>
+                <ArrowRight size={24} color={ICON_COLORS.inactive} weight="bold" style={{ marginHorizontal: 24 }} />
                 <View className="items-center">
                   <Text className="text-4xl">
                     {getTokenIcon(selectedSwap.toToken)}
@@ -435,21 +452,30 @@ export default function SwapHistoryScreen() {
 
               <View className="flex-row justify-between mb-3">
                 <Text className="text-dark-400">Privacy</Text>
-                <Text
-                  className={
-                    selectedSwap.privacyLevel === "shielded"
-                      ? "text-brand-400"
+                <View className="flex-row items-center">
+                  {selectedSwap.privacyLevel === "shielded" ? (
+                    <ShieldCheck size={16} color={ICON_COLORS.brand} weight="fill" />
+                  ) : selectedSwap.privacyLevel === "compliant" ? (
+                    <ClipboardText size={16} color={ICON_COLORS.blue} weight="fill" />
+                  ) : (
+                    <LockOpen size={16} color={ICON_COLORS.white} weight="fill" />
+                  )}
+                  <Text
+                    className={`ml-1 ${
+                      selectedSwap.privacyLevel === "shielded"
+                        ? "text-brand-400"
+                        : selectedSwap.privacyLevel === "compliant"
+                          ? "text-blue-400"
+                          : "text-white"
+                    }`}
+                  >
+                    {selectedSwap.privacyLevel === "shielded"
+                      ? "Shielded"
                       : selectedSwap.privacyLevel === "compliant"
-                        ? "text-blue-400"
-                        : "text-white"
-                  }
-                >
-                  {selectedSwap.privacyLevel === "shielded"
-                    ? "🔒 Shielded"
-                    : selectedSwap.privacyLevel === "compliant"
-                      ? "📋 Compliant"
-                      : "🔓 Public"}
-                </Text>
+                        ? "Compliant"
+                        : "Public"}
+                  </Text>
+                </View>
               </View>
 
               <View className="flex-row justify-between mb-3">
@@ -515,7 +541,9 @@ export default function SwapHistoryScreen() {
         title="Clear History"
       >
         <View className="items-center py-4">
-          <Text className="text-6xl mb-4">🗑️</Text>
+          <View className="w-24 h-24 rounded-full bg-red-900/30 items-center justify-center mb-4">
+            <Trash size={48} color={ICON_COLORS.error} weight="fill" />
+          </View>
           <Text className="text-white text-lg font-semibold text-center mb-2">
             Clear All Swap History?
           </Text>

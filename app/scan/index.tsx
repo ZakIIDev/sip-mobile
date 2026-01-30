@@ -24,6 +24,16 @@ import { useWalletStore } from "@/stores/wallet"
 import { useToastStore } from "@/stores/toast"
 import { Button } from "@/components/ui"
 import type { PaymentRecord } from "@/types"
+import {
+  ArrowLeft,
+  MagnifyingGlass,
+  Coins,
+  Confetti,
+  CheckCircle,
+  ArrowRight,
+  Lock,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // HELPERS
@@ -79,7 +89,7 @@ function FoundPaymentRow({ payment, onPress }: FoundPaymentRowProps) {
       onPress={onPress}
     >
       <View className="w-10 h-10 bg-green-900/30 rounded-full items-center justify-center">
-        <Text className="text-lg">💰</Text>
+        <Coins size={20} color={ICON_COLORS.success} weight="fill" />
       </View>
       <View className="flex-1 ml-3">
         <Text className="text-white font-medium">New Payment Found</Text>
@@ -157,12 +167,14 @@ export default function ScanScreen() {
             className="flex-row items-center"
             onPress={() => router.back()}
           >
-            <Text className="text-2xl text-white">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
             <Text className="text-white ml-4 text-lg">Back</Text>
           </TouchableOpacity>
         </View>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-5xl mb-4">🔍</Text>
+          <View className="w-20 h-20 rounded-full bg-dark-800 items-center justify-center mb-4">
+            <MagnifyingGlass size={40} color={ICON_COLORS.inactive} weight="bold" />
+          </View>
           <Text className="text-white font-semibold text-lg">Connect Wallet</Text>
           <Text className="text-dark-500 text-center mt-2">
             Connect your wallet to scan for incoming payments
@@ -186,7 +198,7 @@ export default function ScanScreen() {
           className="flex-row items-center"
           onPress={() => router.back()}
         >
-          <Text className="text-2xl text-white">←</Text>
+          <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           <Text className="text-white ml-4 text-lg">Back</Text>
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Scan Payments</Text>
@@ -224,9 +236,11 @@ export default function ScanScreen() {
                         : "bg-dark-800"
                     }`}
                   >
-                    <Text className="text-4xl">
-                      {lastScanResult.found > 0 ? "🎉" : "✅"}
-                    </Text>
+                    {lastScanResult.found > 0 ? (
+                      <Confetti size={40} color={ICON_COLORS.success} weight="fill" />
+                    ) : (
+                      <CheckCircle size={40} color={ICON_COLORS.success} weight="fill" />
+                    )}
                   </View>
                   <Text className="text-white font-semibold text-lg">
                     {lastScanResult.found > 0
@@ -240,7 +254,7 @@ export default function ScanScreen() {
               ) : (
                 <>
                   <View className="w-20 h-20 bg-dark-800 rounded-full items-center justify-center mb-4">
-                    <Text className="text-4xl">🔍</Text>
+                    <MagnifyingGlass size={40} color={ICON_COLORS.muted} weight="bold" />
                   </View>
                   <Text className="text-white font-semibold text-lg">
                     Ready to Scan
@@ -302,7 +316,7 @@ export default function ScanScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
-                    <Text className="text-2xl">💰</Text>
+                    <Coins size={24} color={ICON_COLORS.success} weight="fill" />
                     <View>
                       <Text className="text-green-400 font-medium">
                         {unclaimedCount} Unclaimed Payment{unclaimedCount !== 1 ? "s" : ""}
@@ -312,7 +326,7 @@ export default function ScanScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text className="text-green-400 font-bold">→</Text>
+                  <ArrowRight size={20} color={ICON_COLORS.success} weight="bold" />
                 </View>
               </TouchableOpacity>
             )}
@@ -329,7 +343,7 @@ export default function ScanScreen() {
               </Button>
             ) : (
               <Button fullWidth size="lg" onPress={handleScan}>
-                🔍 Scan for Payments
+                Scan for Payments
               </Button>
             )}
           </View>
@@ -417,7 +431,7 @@ export default function ScanScreen() {
           {/* Privacy Note */}
           <View className="mb-8 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
             <View className="flex-row items-start gap-3">
-              <Text className="text-xl">🔒</Text>
+              <Lock size={24} color={ICON_COLORS.brand} weight="fill" />
               <View className="flex-1">
                 <Text className="text-brand-400 font-medium">
                   Privacy Preserved

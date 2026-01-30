@@ -14,6 +14,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { useWallet, getRecommendedProvider } from "@/hooks"
 import { useState } from "react"
+import {
+  ArrowLeft,
+  DeviceMobile,
+  Ghost,
+  CaretRight,
+  Lightbulb,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 export default function LoginScreen() {
   const { connect, status, error, isMWAAvailable, isPhantomAvailable } =
@@ -54,8 +62,9 @@ export default function LoginScreen() {
     <SafeAreaView className="flex-1 bg-dark-950">
       <View className="flex-1 px-6 pt-4">
         {/* Header */}
-        <TouchableOpacity onPress={handleBack} className="mb-4">
-          <Text className="text-brand-500">← Back</Text>
+        <TouchableOpacity onPress={handleBack} className="mb-4 flex-row items-center">
+          <ArrowLeft size={20} color={ICON_COLORS.brand} weight="bold" />
+          <Text className="text-brand-500 ml-1">Back</Text>
         </TouchableOpacity>
 
         <Text className="text-2xl font-bold text-white mb-2">
@@ -79,7 +88,7 @@ export default function LoginScreen() {
               disabled={isConnecting}
             >
               <View className="w-10 h-10 bg-purple-600 rounded-xl items-center justify-center">
-                <Text className="text-xl">📱</Text>
+                <DeviceMobile size={24} color={ICON_COLORS.white} weight="fill" />
               </View>
               <View className="ml-4 flex-1">
                 <View className="flex-row items-center">
@@ -96,7 +105,7 @@ export default function LoginScreen() {
                   Phantom, Solflare, Backpack
                 </Text>
               </View>
-              <Text className="text-dark-600 text-2xl">→</Text>
+              <CaretRight size={24} color={ICON_COLORS.inactive} weight="bold" />
             </TouchableOpacity>
           )}
 
@@ -112,7 +121,7 @@ export default function LoginScreen() {
               disabled={isConnecting}
             >
               <View className="w-10 h-10 bg-purple-500 rounded-xl items-center justify-center">
-                <Text className="text-xl">👻</Text>
+                <Ghost size={24} color={ICON_COLORS.white} weight="fill" />
               </View>
               <View className="ml-4 flex-1">
                 <View className="flex-row items-center">
@@ -128,7 +137,7 @@ export default function LoginScreen() {
                   Connect via Phantom app
                 </Text>
               </View>
-              <Text className="text-dark-600 text-2xl">→</Text>
+              <CaretRight size={24} color={ICON_COLORS.inactive} weight="bold" />
             </TouchableOpacity>
           )}
 
@@ -163,8 +172,8 @@ export default function LoginScreen() {
         <View className="mt-auto pb-8">
           <View className="bg-dark-900 rounded-xl p-4 border border-dark-800">
             <View className="flex-row items-start">
-              <Text className="text-lg mr-3">💡</Text>
-              <View className="flex-1">
+              <Lightbulb size={24} color={ICON_COLORS.warning} weight="fill" />
+              <View className="flex-1 ml-3">
                 <Text className="text-white font-medium mb-1">
                   Why connect an external wallet?
                 </Text>

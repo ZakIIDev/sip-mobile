@@ -27,6 +27,18 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useState, useCallback, useEffect } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import * as Clipboard from "expo-clipboard"
+import {
+  ShieldCheck,
+  Lock,
+  Eye,
+  QrCode,
+  AddressBook,
+  Flask,
+  Warning,
+  CheckCircle,
+  type Icon as PhosphorIcon,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 import { usePrivacyProvider } from "@/hooks/usePrivacyProvider"
 import { useWalletStore } from "@/stores/wallet"
 import { useSettingsStore } from "@/stores/settings"
@@ -261,28 +273,37 @@ export default function SendScreen() {
     setTxError(null)
   }, [])
 
-  const getPrivacyLevelInfo = (level: PrivacyLevel) => {
+  const getPrivacyLevelInfo = (level: PrivacyLevel): {
+    Icon: PhosphorIcon
+    iconColor: string
+    title: string
+    description: string
+    textColor: string
+  } => {
     switch (level) {
       case "shielded":
         return {
-          icon: "🔒",
+          Icon: ShieldCheck,
+          iconColor: ICON_COLORS.brand,
           title: "Private Transfer",
           description: "Amount and recipient hidden on-chain",
-          color: "brand",
+          textColor: "text-brand-400",
         }
       case "compliant":
         return {
-          icon: "🔐",
+          Icon: Lock,
+          iconColor: ICON_COLORS.cyan,
           title: "Compliant Transfer",
           description: "Private with viewing key for auditors",
-          color: "cyan",
+          textColor: "text-cyan-400",
         }
       case "transparent":
         return {
-          icon: "🔓",
+          Icon: Eye,
+          iconColor: ICON_COLORS.muted,
           title: "Public Transfer",
           description: "Fully visible on-chain",
-          color: "dark",
+          textColor: "text-white",
         }
     }
   }
@@ -296,10 +317,10 @@ export default function SendScreen() {
         <EmptyState
           title="Connect Wallet"
           message="Connect your wallet to send SOL privately"
-          icon="wallet-outline"
-          iconColor="#8b5cf6"
+          iconName="wallet"
+          iconColor="brand"
           actionLabel="Set Up Wallet"
-          onAction={() => router.push("/wallet-setup")}
+          onAction={() => router.push("/(auth)/wallet-setup")}
           className="flex-1"
         />
       </SafeAreaView>
@@ -419,15 +440,15 @@ export default function SendScreen() {
                   className="flex-row items-center bg-dark-800 rounded-lg px-3 py-2"
                   onPress={() => router.push("/send/scanner")}
                 >
-                  <Text className="text-dark-400 mr-1">📷</Text>
-                  <Text className="text-dark-400 text-sm">Scan QR</Text>
+                  <QrCode size={16} color={ICON_COLORS.muted} weight="regular" />
+                  <Text className="text-dark-400 text-sm ml-1">Scan QR</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   className="flex-row items-center bg-dark-800 rounded-lg px-3 py-2"
                   onPress={() => router.push("/settings/accounts")}
                 >
-                  <Text className="text-dark-400 mr-1">📋</Text>
-                  <Text className="text-dark-400 text-sm">Contacts</Text>
+                  <AddressBook size={16} color={ICON_COLORS.muted} weight="regular" />
+                  <Text className="text-dark-400 text-sm ml-1">Contacts</Text>
                 </TouchableOpacity>
                 {/* DEBUG: Test stealth address button */}
                 {__DEV__ && (
@@ -441,8 +462,8 @@ export default function SendScreen() {
                       handleRecipientChange(testStealth)
                     }}
                   >
-                    <Text className="text-cyan-300 mr-1">🧪</Text>
-                    <Text className="text-cyan-300 text-sm">Test Stealth</Text>
+                    <Flask size={16} color="#67e8f9" weight="regular" />
+                    <Text className="text-cyan-300 text-sm ml-1">Test Stealth</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -456,43 +477,39 @@ export default function SendScreen() {
               activeOpacity={0.7}
             >
               <Text className="text-dark-400 text-sm mb-3">Privacy Level</Text>
-              <View
-                className={`p-4 rounded-xl border ${
-                  defaultPrivacyLevel === "shielded"
-                    ? "bg-brand-900/20 border-brand-700"
-                    : defaultPrivacyLevel === "compliant"
-                    ? "bg-cyan-900/20 border-cyan-700"
-                    : "bg-dark-800 border-dark-600"
-                }`}
-              >
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <Text className="text-2xl">
-                      {getPrivacyLevelInfo(defaultPrivacyLevel).icon}
-                    </Text>
-                    <View>
-                      <Text
-                        className={`font-medium ${
-                          defaultPrivacyLevel === "transparent"
-                            ? "text-white"
-                            : defaultPrivacyLevel === "compliant"
-                            ? "text-cyan-400"
-                            : "text-brand-400"
-                        }`}
-                      >
-                        {getPrivacyLevelInfo(defaultPrivacyLevel).title}
-                      </Text>
-                      <Text className="text-dark-500 text-xs">
-                        {getPrivacyLevelInfo(defaultPrivacyLevel).description}
-                      </Text>
+              {(() => {
+                const levelInfo = getPrivacyLevelInfo(defaultPrivacyLevel)
+                const LevelIcon = levelInfo.Icon
+                return (
+                  <View
+                    className={`p-4 rounded-xl border ${
+                      defaultPrivacyLevel === "shielded"
+                        ? "bg-brand-900/20 border-brand-700"
+                        : defaultPrivacyLevel === "compliant"
+                        ? "bg-cyan-900/20 border-cyan-700"
+                        : "bg-dark-800 border-dark-600"
+                    }`}
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <LevelIcon size={24} color={levelInfo.iconColor} weight="regular" />
+                        <View>
+                          <Text className={`font-medium ${levelInfo.textColor}`}>
+                            {levelInfo.title}
+                          </Text>
+                          <Text className="text-dark-500 text-xs">
+                            {levelInfo.description}
+                          </Text>
+                        </View>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-dark-500 text-xs">Change</Text>
+                        <Text className="text-dark-500">›</Text>
+                      </View>
                     </View>
                   </View>
-                  <View className="flex-row items-center gap-2">
-                    <Text className="text-dark-500 text-xs">Change</Text>
-                    <Text className="text-dark-500">›</Text>
-                  </View>
-                </View>
-              </View>
+                )
+              })()}
             </TouchableOpacity>
 
             {/* Warning for non-stealth address with private transfer */}
@@ -502,7 +519,7 @@ export default function SendScreen() {
               !addressError && (
                 <View className="mt-4 bg-yellow-900/20 border border-yellow-700/50 rounded-xl p-3">
                   <View className="flex-row items-start gap-2">
-                    <Text className="text-yellow-500">⚠️</Text>
+                    <Warning size={20} color={ICON_COLORS.warning} weight="fill" />
                     <Text className="text-yellow-400 text-sm flex-1">
                       For full privacy, ask the recipient for their stealth address
                       (sip:...). Regular addresses can still receive private transfers
@@ -639,7 +656,7 @@ export default function SendScreen() {
         <View className="gap-4">
           <View testID="transaction-success" className="items-center py-6">
             <View className="w-20 h-20 bg-green-600/20 rounded-full items-center justify-center mb-4">
-              <Text className="text-4xl">✅</Text>
+              <CheckCircle size={48} color={ICON_COLORS.success} weight="fill" />
             </View>
             <Text className="text-2xl font-bold text-white">{amount} SOL</Text>
             <Text className="text-green-400 mt-1">Successfully sent!</Text>

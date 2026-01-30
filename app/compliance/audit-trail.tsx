@@ -16,25 +16,42 @@ import { useCompliance } from "@/hooks"
 import { useToastStore } from "@/stores/toast"
 import { Modal } from "@/components/ui"
 import type { AuditEventType, AuditEvent } from "@/stores"
+import {
+  ArrowLeft,
+  Export,
+  Key,
+  Prohibit,
+  Download,
+  ArrowRight as ArrowRightIcon,
+  ArrowLeft as ArrowLeftIcon,
+  CheckCircle,
+  ArrowsLeftRight,
+  MagnifyingGlass,
+  ChartBar,
+  ClipboardText,
+  Trash,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-function getEventIcon(type: AuditEventType): string {
-  const icons: Record<AuditEventType, string> = {
-    key_export: "📤",
-    key_disclosure: "🔑",
-    key_revocation: "🚫",
-    key_import: "📥",
-    payment_sent: "➡️",
-    payment_received: "⬅️",
-    payment_claimed: "✅",
-    swap_executed: "🔄",
-    scan_performed: "🔍",
-    report_generated: "📊",
+function getEventIcon(type: AuditEventType): PhosphorIcon {
+  const icons: Record<AuditEventType, PhosphorIcon> = {
+    key_export: Export,
+    key_disclosure: Key,
+    key_revocation: Prohibit,
+    key_import: Download,
+    payment_sent: ArrowRightIcon,
+    payment_received: ArrowLeftIcon,
+    payment_claimed: CheckCircle,
+    swap_executed: ArrowsLeftRight,
+    scan_performed: MagnifyingGlass,
+    report_generated: ChartBar,
   }
-  return icons[type] || "📋"
+  return icons[type] || ClipboardText
 }
 
 function getEventColor(type: AuditEventType): string {
@@ -140,6 +157,7 @@ interface EventItemProps {
 }
 
 function EventItem({ event, onPress }: EventItemProps) {
+  const IconComponent = getEventIcon(event.type)
   return (
     <TouchableOpacity
       className="bg-dark-900 rounded-xl p-4 mb-3"
@@ -147,7 +165,7 @@ function EventItem({ event, onPress }: EventItemProps) {
     >
       <View className="flex-row items-start">
         <View className="w-10 h-10 rounded-lg bg-dark-800 items-center justify-center mr-3">
-          <Text className="text-xl">{getEventIcon(event.type)}</Text>
+          <IconComponent size={20} color={ICON_COLORS.muted} weight="fill" />
         </View>
         <View className="flex-1">
           <View className="flex-row items-center justify-between mb-1">
@@ -230,7 +248,9 @@ export default function AuditTrailScreen() {
   const ListEmptyComponent = useMemo(
     () => (
       <View className="items-center py-16">
-        <Text className="text-6xl mb-4">📋</Text>
+        <View className="w-24 h-24 rounded-full bg-dark-800 items-center justify-center mb-4">
+          <ClipboardText size={48} color={ICON_COLORS.inactive} weight="fill" />
+        </View>
         <Text className="text-white text-xl font-semibold mb-2">
           No Audit Events
         </Text>
@@ -250,7 +270,7 @@ export default function AuditTrailScreen() {
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-dark-800">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2 -ml-2">
-            <Text className="text-2xl">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Audit Trail</Text>
         </View>
@@ -331,7 +351,10 @@ export default function AuditTrailScreen() {
           <View>
             <View className="items-center py-4">
               <View className="w-16 h-16 rounded-xl bg-dark-800 items-center justify-center mb-4">
-                <Text className="text-3xl">{getEventIcon(selectedEvent.type)}</Text>
+                {(() => {
+                  const IconComp = getEventIcon(selectedEvent.type)
+                  return <IconComp size={32} color={ICON_COLORS.brand} weight="fill" />
+                })()}
               </View>
               <Text className={`text-xl font-semibold ${getEventColor(selectedEvent.type)}`}>
                 {getEventLabel(selectedEvent.type)}
@@ -378,7 +401,9 @@ export default function AuditTrailScreen() {
         title="Clear Audit Trail"
       >
         <View className="items-center py-4">
-          <Text className="text-6xl mb-4">🗑️</Text>
+          <View className="w-24 h-24 rounded-full bg-red-900/30 items-center justify-center mb-4">
+            <Trash size={48} color={ICON_COLORS.error} weight="fill" />
+          </View>
           <Text className="text-white text-lg font-semibold text-center mb-2">
             Clear All Audit Events?
           </Text>

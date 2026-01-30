@@ -1,12 +1,27 @@
 /**
  * Error State Component
  *
- * Reusable error display with optional retry action
+ * Reusable error display with optional retry action.
+ * Uses Phosphor icons for consistency across the app.
  */
 
 import React from "react"
 import { View, Text, Pressable } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import {
+  WarningCircle,
+  CloudSlash,
+  LockKey,
+  XCircle,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import { ICONS, ICON_COLORS } from "@/constants/icons"
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type ErrorIconCategory = keyof typeof ICONS.status
+type IconColor = keyof typeof ICON_COLORS
 
 export interface ErrorStateProps {
   /** Error title */
@@ -15,41 +30,57 @@ export interface ErrorStateProps {
   message?: string
   /** Retry callback */
   onRetry?: () => void
-  /** Custom icon name */
-  icon?: keyof typeof Ionicons.glyphMap
-  /** Icon color */
-  iconColor?: string
+  /** Icon category from ICONS.status (e.g., "failed", "warning") */
+  iconName?: ErrorIconCategory
+  /** Direct Phosphor icon component (for custom icons) */
+  IconComponent?: PhosphorIcon
+  /** Icon color preset or hex string */
+  iconColor?: IconColor | string
   /** Full screen mode */
   fullScreen?: boolean
   /** Custom className */
   className?: string
 }
 
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 export function ErrorState({
   title = "Something went wrong",
   message = "An unexpected error occurred. Please try again.",
   onRetry,
-  icon = "alert-circle",
-  iconColor = "#ef4444",
+  iconName = "failed",
+  IconComponent,
+  iconColor = "error",
   fullScreen = false,
   className = "",
 }: ErrorStateProps) {
+  // Resolve icon component
+  const Icon = IconComponent || ICONS.status[iconName] || WarningCircle
+
+  // Resolve color
+  const resolvedColor =
+    iconColor in ICON_COLORS
+      ? ICON_COLORS[iconColor as IconColor]
+      : iconColor
+
   const content = (
     <View className={`items-center p-8 ${className}`}>
       <View className="w-16 h-16 bg-red-500/20 rounded-full items-center justify-center mb-4">
-        <Ionicons name={icon} size={32} color={iconColor} />
+        <Icon size={32} color={resolvedColor} weight="fill" />
       </View>
 
       <Text className="text-white text-lg font-semibold text-center mb-2">
         {title}
       </Text>
 
-      <Text className="text-neutral-400 text-center mb-6">{message}</Text>
+      <Text className="text-dark-400 text-center mb-6">{message}</Text>
 
       {onRetry && (
         <Pressable
           onPress={onRetry}
-          className="bg-green-500 px-6 py-3 rounded-xl active:bg-green-600"
+          className="bg-brand-600 px-6 py-3 rounded-xl active:bg-brand-700"
         >
           <Text className="text-white font-semibold">Try Again</Text>
         </Pressable>
@@ -59,7 +90,7 @@ export function ErrorState({
 
   if (fullScreen) {
     return (
-      <View className="flex-1 items-center justify-center bg-neutral-900">
+      <View className="flex-1 items-center justify-center bg-dark-950">
         {content}
       </View>
     )
@@ -67,6 +98,10 @@ export function ErrorState({
 
   return content
 }
+
+// ============================================================================
+// PRESET ERROR STATES
+// ============================================================================
 
 /**
  * Network error variant
@@ -76,8 +111,8 @@ export function NetworkError({ onRetry }: { onRetry?: () => void }) {
     <ErrorState
       title="No Connection"
       message="Please check your internet connection and try again."
-      icon="cloud-offline"
-      iconColor="#f59e0b"
+      IconComponent={CloudSlash}
+      iconColor="warning"
       onRetry={onRetry}
     />
   )
@@ -97,8 +132,8 @@ export function PermissionDenied({
     <ErrorState
       title="Permission Required"
       message={`Please grant ${permission} permission to continue.`}
-      icon="lock-closed"
-      iconColor="#8b5cf6"
+      IconComponent={LockKey}
+      iconColor="brand"
       onRetry={onRetry}
     />
   )
@@ -118,8 +153,8 @@ export function TransactionFailed({
     <ErrorState
       title="Transaction Failed"
       message={message || "The transaction could not be completed. Please try again."}
-      icon="close-circle"
-      iconColor="#ef4444"
+      IconComponent={XCircle}
+      iconColor="error"
       onRetry={onRetry}
     />
   )

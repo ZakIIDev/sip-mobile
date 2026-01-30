@@ -21,6 +21,22 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { useState, useCallback } from "react"
+import {
+  ArrowLeft,
+  CheckCircle,
+  ClipboardText,
+  Export,
+  Eye,
+  FileText,
+  Info,
+  Key,
+  Lock,
+  MagnifyingGlass,
+  Plus,
+  User,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 import { useViewingKeys } from "@/hooks/useViewingKeys"
 import { copyToClipboardSecure } from "@/utils/security"
 import { useWalletStore } from "@/stores/wallet"
@@ -71,14 +87,24 @@ function getPurposeLabel(purpose: DisclosurePurpose): string {
   return labels[purpose]
 }
 
-function getPurposeIcon(purpose: DisclosurePurpose): string {
-  const icons: Record<DisclosurePurpose, string> = {
-    compliance: "📋",
-    audit: "🔍",
-    personal: "👤",
-    other: "📄",
+function getPurposeIcon(purpose: DisclosurePurpose): PhosphorIcon {
+  const icons: Record<DisclosurePurpose, PhosphorIcon> = {
+    compliance: ClipboardText,
+    audit: MagnifyingGlass,
+    personal: User,
+    other: FileText,
   }
   return icons[purpose]
+}
+
+function getPurposeIconColor(purpose: DisclosurePurpose): string {
+  const colors: Record<DisclosurePurpose, string> = {
+    compliance: ICON_COLORS.cyan,
+    audit: ICON_COLORS.blue,
+    personal: ICON_COLORS.brand,
+    other: ICON_COLORS.muted,
+  }
+  return colors[purpose]
 }
 
 // ============================================================================
@@ -93,12 +119,14 @@ interface DisclosureRowProps {
 
 function DisclosureRow({ disclosure, onRevoke, onDelete }: DisclosureRowProps) {
   const isExpired = disclosure.expiresAt && disclosure.expiresAt < Date.now()
+  const PurposeIcon = getPurposeIcon(disclosure.purpose)
+  const purposeColor = getPurposeIconColor(disclosure.purpose)
 
   return (
     <View className="py-4 border-b border-dark-800">
       <View className="flex-row items-start">
         <View className="w-10 h-10 bg-dark-800 rounded-full items-center justify-center">
-          <Text className="text-lg">{getPurposeIcon(disclosure.purpose)}</Text>
+          <PurposeIcon size={20} color={purposeColor} weight="regular" />
         </View>
         <View className="flex-1 ml-3">
           <Text className="text-white font-medium">{disclosure.recipientName}</Text>
@@ -163,7 +191,7 @@ function ImportedKeyRow({ importedKey, onRemove, onScan }: ImportedKeyRowProps) 
     <View className="py-4 border-b border-dark-800">
       <View className="flex-row items-start">
         <View className="w-10 h-10 bg-brand-900/30 rounded-full items-center justify-center">
-          <Text className="text-lg">🔑</Text>
+          <Key size={20} color={ICON_COLORS.brand} weight="fill" />
         </View>
         <View className="flex-1 ml-3">
           <Text className="text-white font-medium">{importedKey.label}</Text>
@@ -187,10 +215,11 @@ function ImportedKeyRow({ importedKey, onRemove, onScan }: ImportedKeyRowProps) 
       {/* Actions */}
       <View className="flex-row gap-2 mt-3 ml-13">
         <TouchableOpacity
-          className="bg-brand-900/20 px-3 py-1.5 rounded-lg"
+          className="bg-brand-900/20 px-3 py-1.5 rounded-lg flex-row items-center gap-1"
           onPress={onScan}
         >
-          <Text className="text-brand-400 text-sm">🔍 Scan</Text>
+          <MagnifyingGlass size={14} color={ICON_COLORS.brand} weight="regular" />
+          <Text className="text-brand-400 text-sm">Scan</Text>
         </TouchableOpacity>
         <TouchableOpacity
           className="bg-dark-800 px-3 py-1.5 rounded-lg"
@@ -430,12 +459,14 @@ export default function ViewingKeysScreen() {
             className="flex-row items-center"
             onPress={() => router.back()}
           >
-            <Text className="text-2xl text-white">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="regular" />
             <Text className="text-white ml-4 text-lg">Back</Text>
           </TouchableOpacity>
         </View>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-5xl mb-4">🔑</Text>
+          <View className="w-20 h-20 bg-brand-900/30 rounded-full items-center justify-center mb-4">
+            <Key size={40} color={ICON_COLORS.brand} weight="fill" />
+          </View>
           <Text className="text-white font-semibold text-lg">Connect Wallet</Text>
           <Text className="text-dark-500 text-center mt-2">
             Connect your wallet to manage viewing keys
@@ -470,7 +501,7 @@ export default function ViewingKeysScreen() {
           className="flex-row items-center"
           onPress={() => router.back()}
         >
-          <Text className="text-2xl text-white">←</Text>
+          <ArrowLeft size={24} color={ICON_COLORS.white} weight="regular" />
           <Text className="text-white ml-4 text-lg">Back</Text>
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Viewing Keys</Text>
@@ -538,7 +569,7 @@ export default function ViewingKeysScreen() {
               <View className="bg-dark-900 rounded-2xl border border-dark-800 p-6">
                 <View className="items-center">
                   <View className="w-16 h-16 bg-brand-900/30 rounded-full items-center justify-center mb-4">
-                    <Text className="text-3xl">🔑</Text>
+                    <Key size={32} color={ICON_COLORS.brand} weight="fill" />
                   </View>
                   <Text className="text-white font-semibold text-lg">
                     Export Viewing Key
@@ -567,22 +598,26 @@ export default function ViewingKeysScreen() {
                 {/* Action Buttons */}
                 <View className="flex-row gap-3 mt-6">
                   <TouchableOpacity
-                    className="flex-1 bg-dark-800 py-3 rounded-xl items-center"
+                    className="flex-1 bg-dark-800 py-3 rounded-xl items-center flex-row justify-center gap-2"
                     onPress={handleExport}
                     disabled={isExporting}
                   >
                     {isExporting ? (
                       <ActivityIndicator size="small" color="#8b5cf6" />
                     ) : (
-                      <Text className="text-white font-medium">📋 Copy</Text>
+                      <>
+                        <ClipboardText size={18} color={ICON_COLORS.white} weight="regular" />
+                        <Text className="text-white font-medium">Copy</Text>
+                      </>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="flex-1 bg-brand-600 py-3 rounded-xl items-center"
+                    className="flex-1 bg-brand-600 py-3 rounded-xl items-center flex-row justify-center gap-2"
                     onPress={handleShare}
                     disabled={isExporting}
                   >
-                    <Text className="text-white font-medium">📤 Share</Text>
+                    <Export size={18} color={ICON_COLORS.white} weight="regular" />
+                    <Text className="text-white font-medium">Share</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -591,7 +626,7 @@ export default function ViewingKeysScreen() {
               {activeDisclosures.length > 0 && (
                 <View className="mt-6 bg-green-900/10 border border-green-800/30 rounded-xl p-4">
                   <View className="flex-row items-center gap-3">
-                    <Text className="text-xl">✅</Text>
+                    <CheckCircle size={24} color={ICON_COLORS.success} weight="fill" />
                     <View className="flex-1">
                       <Text className="text-green-400 font-medium">
                         {activeDisclosures.length} Active Disclosure
@@ -609,7 +644,7 @@ export default function ViewingKeysScreen() {
               {/* Info Card */}
               <View className="mt-6 mb-8 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
                 <View className="flex-row items-start gap-3">
-                  <Text className="text-xl">ℹ️</Text>
+                  <Info size={24} color={ICON_COLORS.brand} weight="fill" />
                   <View className="flex-1">
                     <Text className="text-brand-400 font-medium">
                       What is a viewing key?
@@ -644,7 +679,9 @@ export default function ViewingKeysScreen() {
                 </View>
               ) : (
                 <View className="items-center py-12">
-                  <Text className="text-5xl mb-4">📋</Text>
+                  <View className="w-20 h-20 bg-dark-800 rounded-full items-center justify-center mb-4">
+                    <ClipboardText size={40} color={ICON_COLORS.muted} weight="regular" />
+                  </View>
                   <Text className="text-white font-semibold text-lg">
                     No Disclosures Yet
                   </Text>
@@ -658,7 +695,7 @@ export default function ViewingKeysScreen() {
               {/* Info Card */}
               <View className="mt-6 mb-8 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
                 <View className="flex-row items-start gap-3">
-                  <Text className="text-xl">🔒</Text>
+                  <Lock size={24} color={ICON_COLORS.brand} weight="fill" />
                   <View className="flex-1">
                     <Text className="text-brand-400 font-medium">
                       Disclosure Records
@@ -677,14 +714,13 @@ export default function ViewingKeysScreen() {
           {/* Imported Tab */}
           {activeTab === "imported" && (
             <View>
-              <Button
-                fullWidth
-                variant="secondary"
+              <TouchableOpacity
+                className="bg-dark-800 py-3 rounded-xl items-center flex-row justify-center gap-2 mb-4"
                 onPress={() => setShowImportModal(true)}
-                style={{ marginBottom: 16 }}
               >
-                ➕ Import Viewing Key
-              </Button>
+                <Plus size={18} color={ICON_COLORS.white} weight="bold" />
+                <Text className="text-white font-medium">Import Viewing Key</Text>
+              </TouchableOpacity>
 
               {importedKeys.length > 0 ? (
                 <View className="bg-dark-900 rounded-xl border border-dark-800 px-4">
@@ -699,7 +735,9 @@ export default function ViewingKeysScreen() {
                 </View>
               ) : (
                 <View className="items-center py-12">
-                  <Text className="text-5xl mb-4">🔍</Text>
+                  <View className="w-20 h-20 bg-dark-800 rounded-full items-center justify-center mb-4">
+                    <MagnifyingGlass size={40} color={ICON_COLORS.muted} weight="regular" />
+                  </View>
                   <Text className="text-white font-semibold text-lg">
                     No Imported Keys
                   </Text>
@@ -713,7 +751,7 @@ export default function ViewingKeysScreen() {
               {/* Info Card */}
               <View className="mt-6 mb-8 bg-brand-900/10 border border-brand-800/30 rounded-xl p-4">
                 <View className="flex-row items-start gap-3">
-                  <Text className="text-xl">👁️</Text>
+                  <Eye size={24} color={ICON_COLORS.brand} weight="fill" />
                   <View className="flex-1">
                     <Text className="text-brand-400 font-medium">
                       Imported Keys
@@ -756,21 +794,29 @@ export default function ViewingKeysScreen() {
           <View>
             <Text className="text-dark-400 text-sm mb-2">Purpose</Text>
             <View className="flex-row flex-wrap gap-2">
-              {(["compliance", "audit", "personal", "other"] as const).map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  className={`px-4 py-2 rounded-lg ${
-                    purpose === p ? "bg-brand-600" : "bg-dark-800"
-                  }`}
-                  onPress={() => setPurpose(p)}
-                >
-                  <Text
-                    className={purpose === p ? "text-white" : "text-dark-400"}
+              {(["compliance", "audit", "personal", "other"] as const).map((p) => {
+                const PurposeIcon = getPurposeIcon(p)
+                return (
+                  <TouchableOpacity
+                    key={p}
+                    className={`px-4 py-2 rounded-lg flex-row items-center gap-2 ${
+                      purpose === p ? "bg-brand-600" : "bg-dark-800"
+                    }`}
+                    onPress={() => setPurpose(p)}
                   >
-                    {getPurposeIcon(p)} {getPurposeLabel(p)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <PurposeIcon
+                      size={16}
+                      color={purpose === p ? ICON_COLORS.white : ICON_COLORS.muted}
+                      weight="regular"
+                    />
+                    <Text
+                      className={purpose === p ? "text-white" : "text-dark-400"}
+                    >
+                      {getPurposeLabel(p)}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
           </View>
 

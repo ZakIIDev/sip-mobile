@@ -15,23 +15,39 @@ import { useWalletStore, formatAddress } from "@/stores/wallet"
 import { usePrivacyStore } from "@/stores/privacy"
 import { useViewingKeys } from "@/hooks/useViewingKeys"
 import { Button } from "@/components/ui"
+import {
+  ArrowLeft,
+  MagnifyingGlass,
+  Bank,
+  CheckCircle,
+  Key,
+  ChartBar,
+  Eye,
+  ClipboardText,
+  Gear,
+  Link,
+  Briefcase,
+  CaretRight,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // COMPONENTS
 // ============================================================================
 
 interface StatCardProps {
-  icon: string
+  icon: PhosphorIcon
   title: string
   value: string | number
   subtitle?: string
 }
 
-function StatCard({ icon, title, value, subtitle }: StatCardProps) {
+function StatCard({ icon: IconComponent, title, value, subtitle }: StatCardProps) {
   return (
     <View className="bg-dark-900 rounded-xl border border-dark-800 p-4 flex-1">
       <View className="flex-row items-center gap-2 mb-2">
-        <Text className="text-xl">{icon}</Text>
+        <IconComponent size={20} color={ICON_COLORS.muted} weight="fill" />
         <Text className="text-dark-400 text-sm">{title}</Text>
       </View>
       <Text className="text-2xl font-bold text-white">{value}</Text>
@@ -41,14 +57,14 @@ function StatCard({ icon, title, value, subtitle }: StatCardProps) {
 }
 
 interface FeatureCardProps {
-  icon: string
+  icon: PhosphorIcon
   title: string
   description: string
   onPress?: () => void
   disabled?: boolean
 }
 
-function FeatureCard({ icon, title, description, onPress, disabled }: FeatureCardProps) {
+function FeatureCard({ icon: IconComponent, title, description, onPress, disabled }: FeatureCardProps) {
   return (
     <TouchableOpacity
       className={`bg-dark-900 rounded-xl border border-dark-800 p-4 mb-3 ${disabled ? "opacity-50" : ""}`}
@@ -56,12 +72,12 @@ function FeatureCard({ icon, title, description, onPress, disabled }: FeatureCar
       disabled={disabled}
     >
       <View className="flex-row items-start gap-3">
-        <Text className="text-2xl">{icon}</Text>
+        <IconComponent size={24} color={ICON_COLORS.brand} weight="fill" />
         <View className="flex-1">
           <Text className="text-white font-medium">{title}</Text>
           <Text className="text-dark-500 text-sm mt-1">{description}</Text>
         </View>
-        {!disabled && <Text className="text-dark-500">›</Text>}
+        {!disabled && <CaretRight size={20} color={ICON_COLORS.inactive} weight="bold" />}
         {disabled && (
           <View className="bg-dark-800 px-2 py-1 rounded">
             <Text className="text-dark-500 text-xs">Soon</Text>
@@ -96,12 +112,14 @@ export default function ComplianceScreen() {
             className="flex-row items-center"
             onPress={() => router.back()}
           >
-            <Text className="text-2xl text-white">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
             <Text className="text-white ml-4 text-lg">Back</Text>
           </TouchableOpacity>
         </View>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-5xl mb-4">🔍</Text>
+          <View className="w-20 h-20 rounded-full bg-dark-800 items-center justify-center mb-4">
+            <MagnifyingGlass size={40} color={ICON_COLORS.inactive} weight="bold" />
+          </View>
           <Text className="text-white font-semibold text-lg">Connect Wallet</Text>
           <Text className="text-dark-500 text-center mt-2">
             Connect your wallet to access compliance features
@@ -152,13 +170,13 @@ export default function ComplianceScreen() {
           {/* Stats Row */}
           <View className="flex-row gap-3 mb-6">
             <StatCard
-              icon="✅"
+              icon={CheckCircle}
               title="Compliant"
               value={compliantTxns}
               subtitle="transactions"
             />
             <StatCard
-              icon="🔑"
+              icon={Key}
               title="Disclosures"
               value={activeDisclosures.length}
               subtitle="active keys"
@@ -167,13 +185,13 @@ export default function ComplianceScreen() {
 
           <View className="flex-row gap-3 mb-6">
             <StatCard
-              icon="📊"
+              icon={ChartBar}
               title="Compliance"
               value={`${complianceRate}%`}
               subtitle="rate"
             />
             <StatCard
-              icon="👁️"
+              icon={Eye}
               title="Viewing Keys"
               value={disclosures.length}
               subtitle="generated"
@@ -186,28 +204,28 @@ export default function ComplianceScreen() {
           </Text>
 
           <FeatureCard
-            icon="🔑"
+            icon={Key}
             title="Manage Viewing Keys"
             description="Create and share viewing keys with auditors"
             onPress={() => router.push("/settings/viewing-keys")}
           />
 
           <FeatureCard
-            icon="📋"
+            icon={ClipboardText}
             title="Export Audit Report"
             description="Generate PDF report of compliant transactions"
             disabled
           />
 
           <FeatureCard
-            icon="⚙️"
+            icon={Gear}
             title="Disclosure Policies"
             description="Configure automatic disclosure rules"
             disabled
           />
 
           <FeatureCard
-            icon="🔗"
+            icon={Link}
             title="Auditor Integration"
             description="Connect with verified audit providers"
             disabled
@@ -216,7 +234,7 @@ export default function ComplianceScreen() {
           {/* Info Card */}
           <View className="mt-6 mb-8 bg-green-900/10 border border-green-800/30 rounded-xl p-4">
             <View className="flex-row items-start gap-3">
-              <Text className="text-xl">💼</Text>
+              <Briefcase size={24} color={ICON_COLORS.success} weight="fill" />
               <View className="flex-1">
                 <Text className="text-green-400 font-medium">
                   Privacy + Compliance

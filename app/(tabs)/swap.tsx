@@ -22,6 +22,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
 import { useState, useEffect, useMemo, useCallback } from "react"
+import {
+  ArrowsClockwise,
+  ArrowsDownUp,
+  ChartBar,
+  GearSix,
+  LockSimple,
+  LockSimpleOpen,
+  Check,
+  X,
+  Warning,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 import { useWalletStore } from "@/stores/wallet"
 import { useSwapStore } from "@/stores/swap"
 import { useSettingsStore } from "@/stores/settings"
@@ -106,7 +118,7 @@ function MainnetOnlyOverlay({ network, onSwitchNetwork, onGoBack }: MainnetOnlyO
       <View className="flex-1 items-center justify-center px-6">
         {/* Icon */}
         <View className="w-24 h-24 rounded-full bg-yellow-500/20 items-center justify-center mb-6">
-          <Text className="text-5xl">🔄</Text>
+          <ArrowsClockwise size={48} color={ICON_COLORS.warning} weight="regular" />
         </View>
 
         {/* Title */}
@@ -141,9 +153,10 @@ function MainnetOnlyOverlay({ network, onSwitchNetwork, onGoBack }: MainnetOnlyO
         </View>
 
         {/* Info */}
-        <View className="mt-8 bg-dark-900 rounded-xl p-4 border border-dark-800">
+        <View className="mt-8 bg-dark-900 rounded-xl p-4 border border-dark-800 flex-row items-center justify-center gap-2">
+          <Warning size={16} color={ICON_COLORS.warning} weight="fill" />
           <Text className="text-dark-500 text-sm text-center">
-            💡 You can still test Send, Receive, and Claim on {getNetworkDisplayName(network)}
+            You can still test Send, Receive, and Claim on {getNetworkDisplayName(network)}
           </Text>
         </View>
       </View>
@@ -613,13 +626,13 @@ export default function SwapScreen() {
                 className="bg-dark-800 p-2 rounded-lg"
                 onPress={() => router.push("/swap/history")}
               >
-                <Text className="text-dark-400">📊</Text>
+                <ChartBar size={20} color={ICON_COLORS.muted} weight="regular" />
               </TouchableOpacity>
               <TouchableOpacity
                 className="bg-dark-800 p-2 rounded-lg"
                 onPress={() => setShowSlippageModal(true)}
               >
-                <Text className="text-dark-400">⚙️</Text>
+                <GearSix size={20} color={ICON_COLORS.muted} weight="regular" />
               </TouchableOpacity>
             </View>
           </View>
@@ -641,7 +654,7 @@ export default function SwapScreen() {
               className="bg-dark-800 border-4 border-dark-950 rounded-xl p-2"
               onPress={handleSwapDirection}
             >
-              <Text className="text-xl">↕️</Text>
+              <ArrowsDownUp size={24} color={ICON_COLORS.white} weight="bold" />
             </TouchableOpacity>
           </View>
 
@@ -674,9 +687,13 @@ export default function SwapScreen() {
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
-                <Text className="text-2xl mr-3">
-                  {privacyLevel === "shielded" ? "🔒" : "🔓"}
-                </Text>
+                <View className="mr-3">
+                  {privacyLevel === "shielded" ? (
+                    <LockSimple size={28} color={ICON_COLORS.brand} weight="fill" />
+                  ) : (
+                    <LockSimpleOpen size={28} color={ICON_COLORS.muted} weight="regular" />
+                  )}
+                </View>
                 <View>
                   <Text
                     className={`font-medium ${
@@ -762,8 +779,8 @@ export default function SwapScreen() {
           {/* Preview Mode Banner */}
           {isPreviewMode() && (
             <View className="mt-4 bg-yellow-900/20 border border-yellow-700 rounded-xl p-3">
-              <View className="flex-row items-center justify-center">
-                <Text className="text-yellow-400 text-sm mr-2">⚠️</Text>
+              <View className="flex-row items-center justify-center gap-2">
+                <Warning size={18} color={ICON_COLORS.warning} weight="fill" />
                 <Text className="text-yellow-400 text-sm">
                   Preview Mode — No real transactions
                 </Text>
@@ -903,9 +920,12 @@ export default function SwapScreen() {
           </View>
 
           {slippage > 5 && (
-            <Text className="text-yellow-400 text-sm mt-3">
-              ⚠️ High slippage may result in unfavorable trades
-            </Text>
+            <View className="flex-row items-center gap-2 mt-3">
+              <Warning size={16} color={ICON_COLORS.warning} weight="fill" />
+              <Text className="text-yellow-400 text-sm">
+                High slippage may result in unfavorable trades
+              </Text>
+            </View>
           )}
 
           <Button
@@ -964,15 +984,22 @@ export default function SwapScreen() {
               <Text className="text-dark-400">Network Fee</Text>
               <Text className="text-white">{quote?.fees.networkFee ?? "0.000005"} SOL</Text>
             </View>
-            <View className="flex-row justify-between mb-2">
+            <View className="flex-row justify-between items-center mb-2">
               <Text className="text-dark-400">Privacy</Text>
-              <Text
-                className={
-                  privacyLevel === "shielded" ? "text-brand-400" : "text-white"
-                }
-              >
-                {privacyLevel === "shielded" ? "🔒 Shielded" : "🔓 Public"}
-              </Text>
+              <View className="flex-row items-center gap-1">
+                {privacyLevel === "shielded" ? (
+                  <LockSimple size={16} color={ICON_COLORS.brand} weight="fill" />
+                ) : (
+                  <LockSimpleOpen size={16} color={ICON_COLORS.white} weight="regular" />
+                )}
+                <Text
+                  className={
+                    privacyLevel === "shielded" ? "text-brand-400" : "text-white"
+                  }
+                >
+                  {privacyLevel === "shielded" ? "Shielded" : "Public"}
+                </Text>
+              </View>
             </View>
             <View className="flex-row justify-between items-center">
               <Text className="text-dark-400">Provider</Text>
@@ -1064,7 +1091,7 @@ export default function SwapScreen() {
           {swapStatus === "success" ? (
             <>
               <View className="w-20 h-20 rounded-full bg-green-500/20 items-center justify-center mb-4">
-                <Text className="text-5xl">✓</Text>
+                <Check size={48} color={ICON_COLORS.success} weight="bold" />
               </View>
               <Text className="text-white text-xl font-semibold text-center">
                 Successfully swapped!
@@ -1080,8 +1107,9 @@ export default function SwapScreen() {
               </View>
 
               {privacyLevel === "shielded" && (
-                <View className="bg-brand-900/30 px-3 py-1 rounded-full mt-3">
-                  <Text className="text-brand-400 text-sm">🔒 Private Swap</Text>
+                <View className="bg-brand-900/30 px-3 py-1.5 rounded-full mt-3 flex-row items-center gap-1">
+                  <LockSimple size={14} color={ICON_COLORS.brand} weight="fill" />
+                  <Text className="text-brand-400 text-sm">Private Swap</Text>
                 </View>
               )}
 
@@ -1097,7 +1125,7 @@ export default function SwapScreen() {
           ) : (
             <>
               <View className="w-20 h-20 rounded-full bg-red-500/20 items-center justify-center mb-4">
-                <Text className="text-5xl">✗</Text>
+                <X size={48} color={ICON_COLORS.error} weight="bold" />
               </View>
               <Text className="text-white text-xl font-semibold text-center">
                 Swap Failed

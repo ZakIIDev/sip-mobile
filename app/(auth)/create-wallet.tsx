@@ -15,6 +15,14 @@ import { useState, useEffect } from "react"
 import { Button, LoadingState } from "@/components/ui"
 import { useNativeWallet } from "@/hooks"
 import { copyToClipboardSecure } from "@/utils/security"
+import {
+  ArrowLeft,
+  Warning,
+  CopySimple,
+  Check,
+  CheckCircle,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 type Step = "generate" | "display" | "verify" | "complete"
 
@@ -140,7 +148,10 @@ export default function CreateWalletScreen() {
           {/* Header */}
           <View className="px-6 pt-4">
             <TouchableOpacity onPress={handleBack} className="mb-4">
-              <Text className="text-brand-500">← Back</Text>
+              <View className="flex-row items-center">
+                <ArrowLeft size={20} color={ICON_COLORS.brand} weight="bold" />
+                <Text className="text-brand-500 ml-1">Back</Text>
+              </View>
             </TouchableOpacity>
 
             <Text className="text-2xl font-bold text-white mb-2">
@@ -155,8 +166,8 @@ export default function CreateWalletScreen() {
           {/* Security Warning */}
           <View className="mx-6 mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
             <View className="flex-row items-start">
-              <Text className="text-lg mr-2">⚠️</Text>
-              <View className="flex-1">
+              <Warning size={20} color={ICON_COLORS.error} weight="fill" />
+              <View className="flex-1 ml-2">
                 <Text className="text-red-400 font-medium mb-1">
                   Never share your recovery phrase
                 </Text>
@@ -190,10 +201,15 @@ export default function CreateWalletScreen() {
               {/* Copy Button */}
               <TouchableOpacity
                 onPress={handleCopy}
-                className="mt-4 py-3 rounded-xl bg-dark-800 items-center"
+                className="mt-4 py-3 rounded-xl bg-dark-800 items-center flex-row justify-center"
               >
-                <Text className="text-dark-300">
-                  {copied ? "✓ Copied to clipboard" : "📋 Copy to clipboard"}
+                {copied ? (
+                  <Check size={18} color={ICON_COLORS.success} weight="bold" />
+                ) : (
+                  <CopySimple size={18} color={ICON_COLORS.muted} weight="fill" />
+                )}
+                <Text className="text-dark-300 ml-2">
+                  {copied ? "Copied to clipboard" : "Copy to clipboard"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -238,7 +254,10 @@ export default function CreateWalletScreen() {
           {/* Header */}
           <View className="px-6 pt-4">
             <TouchableOpacity onPress={handleBack} className="mb-4">
-              <Text className="text-brand-500">← Back</Text>
+              <View className="flex-row items-center">
+                <ArrowLeft size={20} color={ICON_COLORS.brand} weight="bold" />
+                <Text className="text-brand-500 ml-1">Back</Text>
+              </View>
             </TouchableOpacity>
 
             <Text className="text-2xl font-bold text-white mb-2">
@@ -313,7 +332,7 @@ export default function CreateWalletScreen() {
       <View className="items-center w-full">
         {/* Success Icon */}
         <View className="w-24 h-24 rounded-full bg-green-500/20 items-center justify-center mb-6">
-          <Text className="text-5xl">✓</Text>
+          <CheckCircle size={56} color={ICON_COLORS.success} weight="fill" />
         </View>
 
         <Text className="text-2xl font-bold text-white mb-2 text-center">

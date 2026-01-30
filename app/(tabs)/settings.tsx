@@ -1,8 +1,40 @@
+/**
+ * Settings Screen
+ *
+ * Main settings hub with Phosphor icons for consistency.
+ */
+
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Alert, Modal, TextInput, Linking, Pressable, Switch } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
+import {
+  Wallet,
+  Key,
+  LockKey,
+  Shield,
+  ShieldCheck,
+  Eye,
+  Lock,
+  ChartBar,
+  MagnifyingGlass,
+  Bell,
+  Globe,
+  GlobeHemisphereWest,
+  Fire,
+  Lightning,
+  Trash,
+  ArrowsClockwise,
+  Info,
+  BookOpen,
+  Bug,
+  Check,
+  Warning,
+  Sparkle,
+} from 'phosphor-react-native'
+import type { Icon as PhosphorIcon } from 'phosphor-react-native'
+import { ICON_COLORS } from '@/constants/icons'
 import { useWalletStore, formatAddress } from '@/stores/wallet'
 import { useViewingKeys } from '@/hooks/useViewingKeys'
 import { useBackgroundScan } from '@/hooks/useBackgroundScan'
@@ -13,82 +45,121 @@ import { useToastStore } from '@/stores/toast'
 import { PRIVACY_PROVIDERS } from '@/privacy-providers'
 import type { PrivacyLevel } from '@/types'
 
-// Privacy Level options
-const PRIVACY_LEVELS: { id: PrivacyLevel; name: string; description: string; icon: string }[] = [
+// ============================================================================
+// PRIVACY LEVELS
+// ============================================================================
+
+interface PrivacyLevelOption {
+  id: PrivacyLevel
+  name: string
+  description: string
+  Icon: PhosphorIcon
+  color: string
+}
+
+const PRIVACY_LEVELS: PrivacyLevelOption[] = [
   {
     id: 'shielded',
     name: 'Shielded',
     description: 'Full privacy - hidden sender, amount, recipient',
-    icon: '🛡️',
+    Icon: ShieldCheck,
+    color: ICON_COLORS.brand,
   },
   {
     id: 'compliant',
     name: 'Compliant',
     description: 'Privacy with viewing key for auditors',
-    icon: '✅',
+    Icon: Lock,
+    color: ICON_COLORS.cyan,
   },
   {
     id: 'transparent',
     name: 'Transparent',
     description: 'No privacy - public transaction',
-    icon: '👁️',
+    Icon: Eye,
+    color: ICON_COLORS.muted,
   },
 ]
 
-// Privacy Provider options now come from @/privacy-providers (single source of truth)
-// Icon mapping for providers (UI layer)
-const PROVIDER_ICONS: Record<string, string> = {
-  'sip-native': '🛡️',
-  'privacy-cash': '💰',
-  'shadowwire': '⚡',
+// ============================================================================
+// PROVIDER ICONS
+// ============================================================================
+
+const PROVIDER_ICONS: Record<string, { Icon: PhosphorIcon; color: string }> = {
+  'sip-native': { Icon: ShieldCheck, color: ICON_COLORS.brand },
+  'privacy-cash': { Icon: Shield, color: ICON_COLORS.success },
+  'shadowwire': { Icon: Lightning, color: ICON_COLORS.yellow },
 }
 
-// RPC Provider options with metadata
-const RPC_PROVIDERS = [
+// ============================================================================
+// RPC PROVIDERS
+// ============================================================================
+
+interface RpcProviderOption {
+  id: 'helius' | 'quicknode' | 'triton' | 'publicnode'
+  name: string
+  description: string
+  Icon: PhosphorIcon
+  color: string
+  needsKey: boolean
+}
+
+const RPC_PROVIDERS: RpcProviderOption[] = [
   {
-    id: 'helius' as const,
+    id: 'helius',
     name: 'Helius',
     description: 'Fast RPC with DAS support',
-    icon: '🔥',
-    needsKey: false, // Free tier embedded
-  },
-  {
-    id: 'quicknode' as const,
-    name: 'QuickNode',
-    description: 'Bring your own API key',
-    icon: '⚡',
-    needsKey: true,
-  },
-  {
-    id: 'triton' as const,
-    name: 'Triton',
-    description: 'Bring your own endpoint',
-    icon: '🔱',
-    needsKey: true,
-  },
-  {
-    id: 'publicnode' as const,
-    name: 'PublicNode',
-    description: 'Free public RPC',
-    icon: '🌐',
+    Icon: Fire,
+    color: ICON_COLORS.orange,
     needsKey: false,
   },
-] as const
+  {
+    id: 'quicknode',
+    name: 'QuickNode',
+    description: 'Bring your own API key',
+    Icon: Lightning,
+    color: ICON_COLORS.yellow,
+    needsKey: true,
+  },
+  {
+    id: 'triton',
+    name: 'Triton',
+    description: 'Bring your own endpoint',
+    Icon: GlobeHemisphereWest,
+    color: ICON_COLORS.blue,
+    needsKey: true,
+  },
+  {
+    id: 'publicnode',
+    name: 'PublicNode',
+    description: 'Free public RPC',
+    Icon: Globe,
+    color: ICON_COLORS.muted,
+    needsKey: false,
+  },
+]
+
+// ============================================================================
+// SETTINGS ITEM COMPONENT
+// ============================================================================
 
 type SettingsItemProps = {
-  icon: string
+  Icon: PhosphorIcon
+  iconColor?: string
   title: string
   subtitle?: string
   onPress?: () => void
 }
 
-function SettingsItem({ icon, title, subtitle, onPress }: SettingsItemProps) {
+function SettingsItem({ Icon, iconColor = ICON_COLORS.muted, title, subtitle, onPress }: SettingsItemProps) {
   return (
     <TouchableOpacity
       className="flex-row items-center p-4 bg-dark-900 border-b border-dark-800"
       onPress={onPress}
     >
-      <Text className="text-2xl mr-4">{icon}</Text>
+      <View className="w-8 items-center mr-3">
+        <Icon size={24} color={iconColor} weight="regular" />
+      </View>
       <View className="flex-1">
         <Text className="text-white font-medium">{title}</Text>
         {subtitle && (
@@ -100,19 +171,27 @@ function SettingsItem({ icon, title, subtitle, onPress }: SettingsItemProps) {
   )
 }
 
+// ============================================================================
+// SETTINGS TOGGLE COMPONENT
+// ============================================================================
+
 type SettingsToggleProps = {
-  icon: string
+  Icon: PhosphorIcon
+  iconColor?: string
   title: string
   subtitle?: string
   value: boolean
   onValueChange: (value: boolean) => void
   disabled?: boolean
+  testID?: string
 }
 
-function SettingsToggle({ icon, title, subtitle, value, onValueChange, disabled, testID }: SettingsToggleProps & { testID?: string }) {
+function SettingsToggle({ Icon, iconColor = ICON_COLORS.muted, title, subtitle, value, onValueChange, disabled, testID }: SettingsToggleProps) {
   return (
     <View testID={testID} className="flex-row items-center p-4 bg-dark-900 border-b border-dark-800">
-      <Text className="text-2xl mr-4">{icon}</Text>
+      <View className="w-8 items-center mr-3">
+        <Icon size={24} color={iconColor} weight="regular" />
+      </View>
       <View className="flex-1">
         <Text className="text-white font-medium">{title}</Text>
         {subtitle && (
@@ -129,6 +208,10 @@ function SettingsToggle({ icon, title, subtitle, value, onValueChange, disabled,
     </View>
   )
 }
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export default function SettingsScreen() {
   const { isConnected, address } = useWalletStore()
@@ -164,6 +247,7 @@ export default function SettingsScreen() {
 
   // Get current privacy provider info (#73)
   const currentPrivacyProvider = PRIVACY_PROVIDERS.find((p) => p.id === privacyProvider) || PRIVACY_PROVIDERS[0]
+  const providerIconInfo = PROVIDER_ICONS[currentPrivacyProvider.id] || { Icon: Shield, color: ICON_COLORS.muted }
 
   // Get app version
   const appVersion = Constants.expoConfig?.version || '0.1.0'
@@ -181,7 +265,7 @@ export default function SettingsScreen() {
           message: `Unable to open ${url}`,
         })
       }
-    } catch (error) {
+    } catch {
       addToast({
         type: 'error',
         title: 'Error',
@@ -318,6 +402,7 @@ export default function SettingsScreen() {
       ]
     )
   }
+
   const disclosureSubtitle = activeDisclosures.length > 0
     ? `${activeDisclosures.length} active disclosure${activeDisclosures.length !== 1 ? 's' : ''}`
     : 'Manage disclosure keys'
@@ -336,19 +421,22 @@ export default function SettingsScreen() {
           </Text>
           <View className="rounded-xl overflow-hidden mx-4">
             <SettingsItem
-              icon="👛"
+              Icon={Wallet}
+              iconColor={ICON_COLORS.brand}
               title="Accounts"
               subtitle={isConnected ? formatAddress(address) : 'Not connected'}
               onPress={() => router.push('/settings/accounts')}
             />
             <SettingsItem
-              icon="🔑"
+              Icon={Key}
+              iconColor={ICON_COLORS.warning}
               title="Viewing Keys"
               subtitle={disclosureSubtitle}
               onPress={() => router.push('/settings/viewing-keys')}
             />
             <SettingsItem
-              icon="🔐"
+              Icon={LockKey}
+              iconColor={ICON_COLORS.cyan}
               title="Security"
               subtitle="Biometrics & PIN"
               onPress={() => router.push('/settings/security')}
@@ -363,32 +451,37 @@ export default function SettingsScreen() {
           </Text>
           <View className="rounded-xl overflow-hidden mx-4">
             <SettingsItem
-              icon={PROVIDER_ICONS[currentPrivacyProvider.id] || '🔒'}
+              Icon={providerIconInfo.Icon}
+              iconColor={providerIconInfo.color}
               title="Privacy Provider"
               subtitle={`${currentPrivacyProvider.name}${currentPrivacyProvider.recommended ? ' (recommended)' : ''}`}
               onPress={() => setShowPrivacyProviderModal(true)}
             />
             <SettingsItem
-              icon={currentPrivacyLevel.icon}
+              Icon={currentPrivacyLevel.Icon}
+              iconColor={currentPrivacyLevel.color}
               title="Privacy Level"
               subtitle={`${currentPrivacyLevel.name}${defaultPrivacyLevel === 'shielded' ? ' (recommended)' : ''}`}
               onPress={() => setShowPrivacyLevelModal(true)}
             />
             <SettingsItem
-              icon="📊"
+              Icon={ChartBar}
+              iconColor={ICON_COLORS.purple}
               title="Privacy Score"
               subtitle="Check wallet exposure"
               onPress={() => router.push('/settings/privacy-score')}
             />
             <SettingsItem
-              icon="🔍"
+              Icon={MagnifyingGlass}
+              iconColor={ICON_COLORS.blue}
               title="Compliance Dashboard"
               subtitle="For institutions"
               onPress={() => router.push('/settings/compliance')}
             />
             <SettingsToggle
               testID="background-scan-toggle"
-              icon="🔔"
+              Icon={Bell}
+              iconColor={backgroundScanEnabled ? ICON_COLORS.brand : ICON_COLORS.muted}
               title="Background Scanning"
               subtitle={backgroundScanEnabled ? `Active (${backgroundScanStatus})` : 'Notify when payments arrive'}
               value={backgroundScanEnabled}
@@ -405,7 +498,8 @@ export default function SettingsScreen() {
           </Text>
           <View className="rounded-xl overflow-hidden mx-4">
             <SettingsItem
-              icon="🌐"
+              Icon={Globe}
+              iconColor={ICON_COLORS.success}
               title="Network"
               subtitle={
                 network === 'mainnet-beta' ? 'Mainnet' :
@@ -414,7 +508,8 @@ export default function SettingsScreen() {
               onPress={() => setShowNetworkModal(true)}
             />
             <SettingsItem
-              icon={currentProvider.icon}
+              Icon={currentProvider.Icon}
+              iconColor={currentProvider.color}
               title="RPC Provider"
               subtitle={currentProvider.name}
               onPress={() => setShowRpcModal(true)}
@@ -429,13 +524,15 @@ export default function SettingsScreen() {
           </Text>
           <View className="rounded-xl overflow-hidden mx-4">
             <SettingsItem
-              icon="🗑️"
+              Icon={Trash}
+              iconColor={ICON_COLORS.error}
               title="Clear Payment History"
               subtitle={`${payments.length} records`}
               onPress={handleClearPaymentHistory}
             />
             <SettingsItem
-              icon="🔄"
+              Icon={ArrowsClockwise}
+              iconColor={ICON_COLORS.muted}
               title="Clear Swap History"
               subtitle={`${swaps.length} records`}
               onPress={handleClearSwapHistory}
@@ -450,19 +547,22 @@ export default function SettingsScreen() {
           </Text>
           <View className="rounded-xl overflow-hidden mx-4">
             <SettingsItem
-              icon="ℹ️"
+              Icon={Info}
+              iconColor={ICON_COLORS.info}
               title="About SIP"
               subtitle={`v${appVersion}`}
               onPress={() => setShowAboutModal(true)}
             />
             <SettingsItem
-              icon="📖"
+              Icon={BookOpen}
+              iconColor={ICON_COLORS.brand}
               title="Documentation"
               subtitle="docs.sip-protocol.org"
               onPress={() => openUrl('https://docs.sip-protocol.org')}
             />
             <SettingsItem
-              icon="🐛"
+              Icon={Bug}
+              iconColor={ICON_COLORS.warning}
               title="Report Issue"
               subtitle="GitHub"
               onPress={() => openUrl('https://github.com/sip-protocol/sip-mobile/issues')}
@@ -515,13 +615,15 @@ export default function SettingsScreen() {
                     }`}
                     onPress={() => handleSelectProvider(provider.id)}
                   >
-                    <Text className="text-2xl mr-3">{provider.icon}</Text>
+                    <View className="w-8 items-center mr-3">
+                      <provider.Icon size={24} color={provider.color} weight="regular" />
+                    </View>
                     <View className="flex-1">
                       <Text className="text-white font-medium">{provider.name}</Text>
                       <Text className="text-dark-400 text-sm">{provider.description}</Text>
                     </View>
                     {rpcProvider === provider.id && (
-                      <Text className="text-brand-400 text-lg">✓</Text>
+                      <Check size={20} color={ICON_COLORS.brand} weight="bold" />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -631,16 +733,17 @@ export default function SettingsScreen() {
                     <Text className="text-dark-400 text-sm">{net.desc}</Text>
                   </View>
                   {network === net.id && (
-                    <Text className="text-brand-400 text-lg">✓</Text>
+                    <Check size={20} color={ICON_COLORS.brand} weight="bold" />
                   )}
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Warning for test networks */}
-            <View className="mx-4 mb-4 p-3 bg-yellow-900/20 border border-yellow-700/30 rounded-xl">
-              <Text className="text-yellow-500 text-sm">
-                ⚠️ Tokens on test networks (Devnet/Testnet) have no monetary value. Use Mainnet for real transactions.
+            <View className="mx-4 mb-4 p-3 bg-yellow-900/20 border border-yellow-700/30 rounded-xl flex-row items-start gap-2">
+              <Warning size={20} color={ICON_COLORS.warning} weight="fill" />
+              <Text className="text-yellow-500 text-sm flex-1">
+                Tokens on test networks (Devnet/Testnet) have no monetary value. Use Mainnet for real transactions.
               </Text>
             </View>
 
@@ -694,7 +797,9 @@ export default function SettingsScreen() {
                     })
                   }}
                 >
-                  <Text className="text-2xl mr-3">{level.icon}</Text>
+                  <View className="w-8 items-center mr-3">
+                    <level.Icon size={24} color={level.color} weight="regular" />
+                  </View>
                   <View className="flex-1">
                     <View className="flex-row items-center">
                       <Text className="text-white font-medium">{level.name}</Text>
@@ -707,7 +812,7 @@ export default function SettingsScreen() {
                     <Text className="text-dark-400 text-sm">{level.description}</Text>
                   </View>
                   {defaultPrivacyLevel === level.id && (
-                    <Text className="text-brand-400 text-lg">✓</Text>
+                    <Check size={20} color={ICON_COLORS.brand} weight="bold" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -736,7 +841,9 @@ export default function SettingsScreen() {
         >
           <Pressable className="bg-dark-900 rounded-t-3xl" onPress={(e) => e.stopPropagation()}>
             <View className="p-6 items-center">
-              <Text className="text-5xl mb-4">🛡️</Text>
+              <View className="w-20 h-20 bg-brand-900/30 rounded-full items-center justify-center mb-4">
+                <ShieldCheck size={48} color={ICON_COLORS.brand} weight="fill" />
+              </View>
               <Text className="text-2xl font-bold text-white">SIP Privacy</Text>
               <Text className="text-dark-400 mt-1">Version {appVersion}</Text>
               <Text className="text-dark-500 text-center mt-4 px-4">
@@ -806,52 +913,58 @@ export default function SettingsScreen() {
             </View>
 
             <View className="p-4">
-              {PRIVACY_PROVIDERS.map((provider) => (
-                <TouchableOpacity
-                  key={provider.id}
-                  className={`flex-row items-center p-4 rounded-xl mb-2 ${
-                    privacyProvider === provider.id
-                      ? 'bg-brand-600/20 border border-brand-500'
-                      : 'bg-dark-800'
-                  }`}
-                  onPress={() => {
-                    setPrivacyProvider(provider.id)
-                    setShowPrivacyProviderModal(false)
-                    addToast({
-                      type: 'success',
-                      title: 'Provider Changed',
-                      message: `Now using ${provider.name}`,
-                    })
-                  }}
-                >
-                  <Text className="text-2xl mr-3">{PROVIDER_ICONS[provider.id] || '🔒'}</Text>
-                  <View className="flex-1">
-                    <View className="flex-row items-center">
-                      <Text className="text-white font-medium">{provider.name}</Text>
-                      {provider.recommended && (
-                        <View className="ml-2 px-2 py-0.5 bg-green-900/30 rounded">
-                          <Text className="text-green-400 text-xs">Recommended</Text>
-                        </View>
-                      )}
-                      {provider.status === 'coming-soon' && (
-                        <View className="ml-2 px-2 py-0.5 bg-yellow-900/30 rounded">
-                          <Text className="text-yellow-400 text-xs">Coming Soon</Text>
-                        </View>
-                      )}
+              {PRIVACY_PROVIDERS.map((provider) => {
+                const iconInfo = PROVIDER_ICONS[provider.id] || { Icon: Shield, color: ICON_COLORS.muted }
+                return (
+                  <TouchableOpacity
+                    key={provider.id}
+                    className={`flex-row items-center p-4 rounded-xl mb-2 ${
+                      privacyProvider === provider.id
+                        ? 'bg-brand-600/20 border border-brand-500'
+                        : 'bg-dark-800'
+                    }`}
+                    onPress={() => {
+                      setPrivacyProvider(provider.id)
+                      setShowPrivacyProviderModal(false)
+                      addToast({
+                        type: 'success',
+                        title: 'Provider Changed',
+                        message: `Now using ${provider.name}`,
+                      })
+                    }}
+                  >
+                    <View className="w-8 items-center mr-3">
+                      <iconInfo.Icon size={24} color={iconInfo.color} weight="regular" />
                     </View>
-                    <Text className="text-dark-400 text-sm">{provider.description}</Text>
-                  </View>
-                  {privacyProvider === provider.id && (
-                    <Text className="text-brand-400 text-lg">✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <Text className="text-white font-medium">{provider.name}</Text>
+                        {provider.recommended && (
+                          <View className="ml-2 px-2 py-0.5 bg-green-900/30 rounded">
+                            <Text className="text-green-400 text-xs">Recommended</Text>
+                          </View>
+                        )}
+                        {provider.status === 'coming-soon' && (
+                          <View className="ml-2 px-2 py-0.5 bg-yellow-900/30 rounded">
+                            <Text className="text-yellow-400 text-xs">Coming Soon</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text className="text-dark-400 text-sm">{provider.description}</Text>
+                    </View>
+                    {privacyProvider === provider.id && (
+                      <Check size={20} color={ICON_COLORS.brand} weight="bold" />
+                    )}
+                  </TouchableOpacity>
+                )
+              })}
             </View>
 
             {/* Info about viewing keys */}
-            <View className="mx-4 mb-4 p-3 bg-brand-900/20 border border-brand-700/30 rounded-xl">
-              <Text className="text-brand-400 text-sm">
-                ✨ SIP adds viewing keys to ALL providers for compliance-ready privacy.
+            <View className="mx-4 mb-4 p-3 bg-brand-900/20 border border-brand-700/30 rounded-xl flex-row items-start gap-2">
+              <Sparkle size={20} color={ICON_COLORS.brand} weight="fill" />
+              <Text className="text-brand-400 text-sm flex-1">
+                SIP adds viewing keys to ALL providers for compliance-ready privacy.
               </Text>
             </View>
 

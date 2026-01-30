@@ -1,5 +1,7 @@
 import { View, Text, TouchableOpacity, Animated } from "react-native"
 import { useRef, useEffect } from "react"
+import { LockSimple, LockSimpleOpen } from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 interface ToggleProps {
   value: boolean
@@ -87,7 +89,11 @@ export function PrivacyToggle({
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
-          <Text className="text-2xl">{value ? "🔒" : "🔓"}</Text>
+          {value ? (
+            <LockSimple size={28} color={ICON_COLORS.brand} weight="fill" />
+          ) : (
+            <LockSimpleOpen size={28} color={ICON_COLORS.muted} weight="regular" />
+          )}
           <View>
             <Text
               className={`font-medium ${

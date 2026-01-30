@@ -22,6 +22,18 @@ import { useState, useMemo, useCallback } from "react"
 import { usePrivacyStore } from "@/stores/privacy"
 import { useWalletStore } from "@/stores/wallet"
 import type { PaymentRecord, PrivacyLevel } from "@/types"
+import {
+  ArrowLeft,
+  ArrowDown,
+  ArrowUp,
+  MagnifyingGlass,
+  X,
+  ShieldCheck,
+  Lock,
+  Eye,
+  ClipboardText,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // TYPES
@@ -76,14 +88,14 @@ function getStatusColor(status: PaymentRecord["status"]): string {
   }
 }
 
-function getPrivacyIcon(level: PrivacyLevel): string {
+function getPrivacyIcon(level: PrivacyLevel): React.ReactNode {
   switch (level) {
     case "shielded":
-      return "🔒"
+      return <ShieldCheck size={14} color={ICON_COLORS.success} weight="fill" />
     case "compliant":
-      return "🔐"
+      return <Lock size={14} color={ICON_COLORS.brand} weight="fill" />
     case "transparent":
-      return "🔓"
+      return <Eye size={14} color={ICON_COLORS.muted} weight="fill" />
   }
 }
 
@@ -110,7 +122,11 @@ function TransactionItem({ payment, onPress }: TransactionItemProps) {
           isReceive ? "bg-green-900/30" : "bg-brand-900/30"
         }`}
       >
-        <Text className="text-lg">{isReceive ? "↓" : "↑"}</Text>
+        {isReceive ? (
+          <ArrowDown size={20} color={ICON_COLORS.success} weight="bold" />
+        ) : (
+          <ArrowUp size={20} color={ICON_COLORS.brand} weight="bold" />
+        )}
       </View>
 
       {/* Details */}
@@ -127,9 +143,9 @@ function TransactionItem({ payment, onPress }: TransactionItemProps) {
         <View className="flex-row items-center mt-0.5">
           <Text className="text-dark-500 text-sm">{formatDate(payment.timestamp)}</Text>
           <Text className="text-dark-600 mx-1">•</Text>
-          <Text className="text-dark-500 text-sm">
+          <View className="flex-row items-center">
             {getPrivacyIcon(payment.privacyLevel)}
-          </Text>
+          </View>
         </View>
       </View>
 
@@ -228,7 +244,9 @@ export default function HistoryScreen() {
 
   const renderEmptyState = () => (
     <View className="flex-1 items-center justify-center py-20">
-      <Text className="text-5xl mb-4">📋</Text>
+      <View className="w-20 h-20 rounded-full bg-dark-800 items-center justify-center mb-4">
+        <ClipboardText size={40} color={ICON_COLORS.inactive} weight="fill" />
+      </View>
       <Text className="text-white font-semibold text-lg">No Transactions</Text>
       <Text className="text-dark-500 text-center mt-2 px-8">
         {!isConnected
@@ -244,9 +262,9 @@ export default function HistoryScreen() {
     <View className="px-4 pb-4">
       {/* Search Bar */}
       <View className="bg-dark-900 border border-dark-800 rounded-xl px-4 py-3 flex-row items-center">
-        <Text className="text-dark-500 mr-2">🔍</Text>
+        <MagnifyingGlass size={18} color={ICON_COLORS.inactive} weight="bold" />
         <TextInput
-          className="flex-1 text-white"
+          className="flex-1 text-white ml-2"
           placeholder="Search by tx hash or address"
           placeholderTextColor="#71717a"
           value={searchQuery}
@@ -256,7 +274,7 @@ export default function HistoryScreen() {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <Text className="text-dark-500">✕</Text>
+            <X size={18} color={ICON_COLORS.inactive} weight="bold" />
           </TouchableOpacity>
         )}
       </View>
@@ -322,7 +340,7 @@ export default function HistoryScreen() {
           className="flex-row items-center"
           onPress={() => router.back()}
         >
-          <Text className="text-2xl text-white">←</Text>
+          <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           <Text className="text-white ml-4 text-lg">Back</Text>
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">History</Text>

@@ -15,17 +15,28 @@ import { useViewingKeys } from "@/hooks"
 import { useToastStore } from "@/stores/toast"
 import { Modal } from "@/components/ui"
 import type { ViewingKeyDisclosure } from "@/types"
+import {
+  ArrowLeft,
+  ClipboardText,
+  MagnifyingGlass,
+  User,
+  FileText,
+  Key,
+  Prohibit,
+} from "phosphor-react-native"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-function getPurposeIcon(purpose: ViewingKeyDisclosure["purpose"]): string {
-  const icons: Record<ViewingKeyDisclosure["purpose"], string> = {
-    compliance: "📋",
-    audit: "🔍",
-    personal: "👤",
-    other: "📝",
+function getPurposeIcon(purpose: ViewingKeyDisclosure["purpose"]): PhosphorIcon {
+  const icons: Record<ViewingKeyDisclosure["purpose"], PhosphorIcon> = {
+    compliance: ClipboardText,
+    audit: MagnifyingGlass,
+    personal: User,
+    other: FileText,
   }
   return icons[purpose]
 }
@@ -103,6 +114,7 @@ function DisclosureItem({ disclosure, onPress, onRevoke }: DisclosureItemProps) 
   const isActive =
     !disclosure.revoked &&
     (!disclosure.expiresAt || disclosure.expiresAt > Date.now())
+  const IconComponent = getPurposeIcon(disclosure.purpose)
 
   return (
     <TouchableOpacity
@@ -112,7 +124,7 @@ function DisclosureItem({ disclosure, onPress, onRevoke }: DisclosureItemProps) 
       <View className="flex-row items-start justify-between">
         <View className="flex-row items-start flex-1">
           <View className="w-10 h-10 rounded-lg bg-dark-800 items-center justify-center mr-3">
-            <Text className="text-xl">{getPurposeIcon(disclosure.purpose)}</Text>
+            <IconComponent size={20} color={ICON_COLORS.muted} weight="fill" />
           </View>
           <View className="flex-1">
             <Text className="text-white font-semibold" numberOfLines={1}>
@@ -277,7 +289,9 @@ export default function DisclosuresScreen() {
   const ListEmptyComponent = useMemo(
     () => (
       <View className="items-center py-16">
-        <Text className="text-6xl mb-4">🔑</Text>
+        <View className="w-24 h-24 rounded-full bg-dark-800 items-center justify-center mb-4">
+          <Key size={48} color={ICON_COLORS.inactive} weight="fill" />
+        </View>
         <Text className="text-white text-xl font-semibold mb-2">
           No Disclosures
         </Text>
@@ -307,7 +321,7 @@ export default function DisclosuresScreen() {
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-dark-800">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2 -ml-2">
-            <Text className="text-2xl">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Disclosures</Text>
         </View>
@@ -391,9 +405,10 @@ export default function DisclosuresScreen() {
           <View>
             <View className="items-center py-4">
               <View className="w-16 h-16 rounded-xl bg-dark-800 items-center justify-center mb-4">
-                <Text className="text-3xl">
-                  {getPurposeIcon(selectedDisclosure.purpose)}
-                </Text>
+                {(() => {
+                  const IconComp = getPurposeIcon(selectedDisclosure.purpose)
+                  return <IconComp size={32} color={ICON_COLORS.brand} weight="fill" />
+                })()}
               </View>
               <Text className="text-white text-xl font-semibold">
                 {selectedDisclosure.recipientName}
@@ -490,7 +505,9 @@ export default function DisclosuresScreen() {
         title="Revoke Access"
       >
         <View className="items-center py-4">
-          <Text className="text-6xl mb-4">🚫</Text>
+          <View className="w-24 h-24 rounded-full bg-red-900/30 items-center justify-center mb-4">
+            <Prohibit size={48} color={ICON_COLORS.error} weight="fill" />
+          </View>
           <Text className="text-white text-lg font-semibold text-center mb-2">
             Revoke Viewing Key Access?
           </Text>

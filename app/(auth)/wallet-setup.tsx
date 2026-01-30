@@ -12,10 +12,18 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { router, Href } from "expo-router"
 import { useNativeWallet } from "@/hooks"
 import { useEffect } from "react"
+import type { Icon as PhosphorIcon } from "phosphor-react-native"
+import {
+  Sparkle,
+  DownloadSimple,
+  Link,
+  LockKey,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 interface SetupOption {
   id: string
-  emoji: string
+  icon: PhosphorIcon
   title: string
   description: string
   route: Href
@@ -25,7 +33,7 @@ interface SetupOption {
 const SETUP_OPTIONS: SetupOption[] = [
   {
     id: "create",
-    emoji: "✨",
+    icon: Sparkle,
     title: "Create New Wallet",
     description: "Generate a new wallet with a secure seed phrase",
     route: "/create-wallet",
@@ -33,7 +41,7 @@ const SETUP_OPTIONS: SetupOption[] = [
   },
   {
     id: "import",
-    emoji: "📥",
+    icon: DownloadSimple,
     title: "Import Existing Wallet",
     description: "Restore from seed phrase or private key",
     route: "/import-wallet",
@@ -91,7 +99,7 @@ export default function WalletSetupScreen() {
                   option.primary ? "bg-brand-600/20" : "bg-dark-800"
                 }`}
               >
-                <Text className="text-2xl">{option.emoji}</Text>
+                <option.icon size={28} color={option.primary ? ICON_COLORS.brand : ICON_COLORS.muted} weight="fill" />
               </View>
               <View className="flex-1">
                 <Text className="text-lg font-semibold text-white">
@@ -124,8 +132,8 @@ export default function WalletSetupScreen() {
           activeOpacity={0.7}
         >
           <View className="flex-row items-center justify-center">
-            <Text className="text-dark-400 mr-2">🔗</Text>
-            <Text className="text-dark-400">Connect External Wallet</Text>
+            <Link size={18} color={ICON_COLORS.inactive} weight="bold" />
+            <Text className="text-dark-400 ml-2">Connect External Wallet</Text>
           </View>
         </TouchableOpacity>
 
@@ -138,8 +146,8 @@ export default function WalletSetupScreen() {
       <View className="px-6 pb-8">
         <View className="bg-dark-900 rounded-xl p-4 border border-dark-800">
           <View className="flex-row items-start">
-            <Text className="text-lg mr-3">🔐</Text>
-            <View className="flex-1">
+            <LockKey size={24} color={ICON_COLORS.brand} weight="fill" />
+            <View className="flex-1 ml-3">
               <Text className="text-white font-medium mb-1">
                 Your keys, your crypto
               </Text>

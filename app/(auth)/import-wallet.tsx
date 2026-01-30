@@ -20,6 +20,11 @@ import { router } from "expo-router"
 import { useState } from "react"
 import { Button, LoadingState } from "@/components/ui"
 import { useNativeWallet } from "@/hooks"
+import {
+  ArrowLeft,
+  LockSimple,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 type ImportMethod = "seed" | "privateKey"
 
@@ -89,8 +94,9 @@ export default function ImportWalletScreen() {
         >
           {/* Header */}
           <View className="px-6 pt-4">
-            <TouchableOpacity onPress={handleBack} className="mb-4">
-              <Text className="text-brand-500">← Back</Text>
+            <TouchableOpacity onPress={handleBack} className="mb-4 flex-row items-center">
+              <ArrowLeft size={20} color={ICON_COLORS.brand} weight="bold" />
+              <Text className="text-brand-500 ml-1">Back</Text>
             </TouchableOpacity>
 
             <Text className="text-2xl font-bold text-white mb-2">
@@ -205,8 +211,8 @@ export default function ImportWalletScreen() {
           {/* Security Warning */}
           <View className="mx-6 mt-6 bg-dark-900 rounded-xl p-4 border border-dark-800">
             <View className="flex-row items-start">
-              <Text className="text-lg mr-3">🔒</Text>
-              <View className="flex-1">
+              <LockSimple size={24} color={ICON_COLORS.brand} weight="fill" />
+              <View className="flex-1 ml-3">
                 <Text className="text-white font-medium mb-1">
                   Secure Import
                 </Text>

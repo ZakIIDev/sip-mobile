@@ -7,7 +7,7 @@
  * - Recent transaction activity
  */
 
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Image } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { useCallback, useState, useMemo, useEffect } from "react"
@@ -256,7 +256,14 @@ export default function HomeScreen() {
         {/* Header */}
         <View className="pt-6 pb-4 flex-row items-center justify-between">
           <View>
-            <Text className="text-3xl font-bold text-white">SIP Privacy</Text>
+            <View className="flex-row items-center">
+              <Image
+                source={require("@/assets/logo-mark.png")}
+                style={{ width: 36, height: 36 }}
+                resizeMode="contain"
+              />
+              <Text className="text-3xl font-bold text-white ml-2">SIP Privacy</Text>
+            </View>
             <Text className="text-dark-400 mt-1">
               Private transactions on Solana
             </Text>

@@ -14,6 +14,17 @@ import { router } from "expo-router"
 import { useState, useCallback } from "react"
 import { useCompliance, useViewingKeys } from "@/hooks"
 import { useToastStore } from "@/stores/toast"
+import {
+  ArrowLeft,
+  Lock,
+  Key,
+  ClipboardText,
+  MagnifyingGlass,
+  ChartBar,
+  FileText,
+  ArrowRight,
+} from "phosphor-react-native"
+import { ICON_COLORS } from "@/constants/icons"
 
 // ============================================================================
 // COMPONENTS
@@ -65,22 +76,22 @@ function ScoreCard({ score, label, colorClass, breakdown }: ScoreCardProps) {
         <BreakdownItem
           label="Transaction Privacy"
           value={breakdown.transactionPrivacy}
-          icon="🔒"
+          icon={<Lock size={20} color={ICON_COLORS.muted} weight="fill" />}
         />
         <BreakdownItem
           label="Key Management"
           value={breakdown.keyManagement}
-          icon="🔑"
+          icon={<Key size={20} color={ICON_COLORS.muted} weight="fill" />}
         />
         <BreakdownItem
           label="Disclosure Control"
           value={breakdown.disclosureControl}
-          icon="📋"
+          icon={<ClipboardText size={20} color={ICON_COLORS.muted} weight="fill" />}
         />
         <BreakdownItem
           label="Scanning Frequency"
           value={breakdown.scanningFrequency}
-          icon="🔍"
+          icon={<MagnifyingGlass size={20} color={ICON_COLORS.muted} weight="bold" />}
         />
       </View>
     </View>
@@ -94,7 +105,7 @@ function BreakdownItem({
 }: {
   label: string
   value: number
-  icon: string
+  icon: React.ReactNode
 }) {
   const getBarColor = (v: number) => {
     if (v >= 80) return "bg-green-500"
@@ -107,7 +118,7 @@ function BreakdownItem({
     <View className="mb-3">
       <View className="flex-row justify-between items-center mb-1">
         <View className="flex-row items-center">
-          <Text className="text-lg mr-2">{icon}</Text>
+          <View className="mr-2">{icon}</View>
           <Text className="text-dark-300 text-sm">{label}</Text>
         </View>
         <Text className="text-white font-medium">{value}%</Text>
@@ -123,7 +134,7 @@ function BreakdownItem({
 }
 
 interface QuickStatProps {
-  icon: string
+  icon: React.ReactNode
   label: string
   value: string | number
   subtext?: string
@@ -133,7 +144,7 @@ interface QuickStatProps {
 function QuickStat({ icon, label, value, subtext, onPress }: QuickStatProps) {
   const content = (
     <View className="bg-dark-800 rounded-xl p-4 flex-1">
-      <Text className="text-2xl mb-2">{icon}</Text>
+      <View className="mb-2">{icon}</View>
       <Text className="text-2xl font-bold text-white">{value}</Text>
       <Text className="text-dark-400 text-sm">{label}</Text>
       {subtext && <Text className="text-dark-500 text-xs mt-1">{subtext}</Text>}
@@ -152,7 +163,7 @@ function QuickStat({ icon, label, value, subtext, onPress }: QuickStatProps) {
 }
 
 interface ActionCardProps {
-  icon: string
+  icon: React.ReactNode
   title: string
   description: string
   onPress: () => void
@@ -165,13 +176,13 @@ function ActionCard({ icon, title, description, onPress }: ActionCardProps) {
       onPress={onPress}
     >
       <View className="w-12 h-12 rounded-xl bg-dark-800 items-center justify-center mr-4">
-        <Text className="text-2xl">{icon}</Text>
+        {icon}
       </View>
       <View className="flex-1">
         <Text className="text-white font-semibold">{title}</Text>
         <Text className="text-dark-400 text-sm">{description}</Text>
       </View>
-      <Text className="text-dark-400">→</Text>
+      <ArrowRight size={20} color={ICON_COLORS.inactive} weight="bold" />
     </TouchableOpacity>
   )
 }
@@ -222,7 +233,7 @@ export default function ComplianceDashboard() {
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-dark-800">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2 -ml-2">
-            <Text className="text-2xl">←</Text>
+            <ArrowLeft size={24} color={ICON_COLORS.white} weight="bold" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Compliance</Text>
         </View>
@@ -258,20 +269,20 @@ export default function ComplianceDashboard() {
           {/* Quick Stats */}
           <View className="flex-row gap-3 mb-6">
             <QuickStat
-              icon="🔒"
+              icon={<Lock size={24} color={ICON_COLORS.brand} weight="fill" />}
               label="Shielded"
               value={stats.shieldedTransactions}
               subtext={`of ${stats.totalTransactions} total`}
             />
             <QuickStat
-              icon="📋"
+              icon={<ClipboardText size={24} color={ICON_COLORS.brand} weight="fill" />}
               label="Active Disclosures"
               value={activeDisclosures.length}
               subtext={`${disclosures.length} total`}
               onPress={() => router.push("/compliance/disclosures")}
             />
             <QuickStat
-              icon="🔍"
+              icon={<MagnifyingGlass size={24} color={ICON_COLORS.brand} weight="bold" />}
               label="Last Scan"
               value={formatLastScan(stats.lastScanAge)}
               onPress={() => router.push("/scan")}
@@ -282,28 +293,28 @@ export default function ComplianceDashboard() {
           <Text className="text-white text-lg font-semibold mb-3">Quick Actions</Text>
 
           <ActionCard
-            icon="📊"
+            icon={<ChartBar size={24} color={ICON_COLORS.brand} weight="fill" />}
             title="Audit Trail"
             description="View all compliance events"
             onPress={() => router.push("/compliance/audit-trail")}
           />
 
           <ActionCard
-            icon="🔑"
+            icon={<Key size={24} color={ICON_COLORS.brand} weight="fill" />}
             title="Viewing Keys"
             description="Export or manage your viewing keys"
             onPress={() => router.push("/settings/viewing-keys")}
           />
 
           <ActionCard
-            icon="📝"
+            icon={<FileText size={24} color={ICON_COLORS.brand} weight="fill" />}
             title="Generate Report"
             description="Create compliance report for auditors"
             onPress={() => router.push("/compliance/report")}
           />
 
           <ActionCard
-            icon="📋"
+            icon={<ClipboardText size={24} color={ICON_COLORS.brand} weight="fill" />}
             title="Disclosure History"
             description="Track who has your viewing keys"
             onPress={() => router.push("/compliance/disclosures")}
