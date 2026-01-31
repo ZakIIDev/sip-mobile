@@ -42,6 +42,7 @@ import { ICON_COLORS } from "@/constants/icons"
 
 type FilterType = "all" | "send" | "receive"
 type FilterStatus = "all" | "pending" | "completed" | "failed" | "claimed"
+type FilterPrivacy = "all" | "shielded" | "compliant" | "transparent"
 
 // ============================================================================
 // HELPERS
@@ -199,6 +200,7 @@ export default function HistoryScreen() {
 
   const [filterType, setFilterType] = useState<FilterType>("all")
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
+  const [filterPrivacy, setFilterPrivacy] = useState<FilterPrivacy>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [refreshing, setRefreshing] = useState(false)
 
@@ -222,6 +224,11 @@ export default function HistoryScreen() {
       result = result.filter((p) => p.status === filterStatus)
     }
 
+    // Filter by privacy level
+    if (filterPrivacy !== "all") {
+      result = result.filter((p) => p.privacyLevel === filterPrivacy)
+    }
+
     // Search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
@@ -237,7 +244,7 @@ export default function HistoryScreen() {
     result.sort((a, b) => b.timestamp - a.timestamp)
 
     return result
-  }, [networkPayments, filterType, filterStatus, searchQuery])
+  }, [networkPayments, filterType, filterStatus, filterPrivacy, searchQuery])
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -322,6 +329,25 @@ export default function HistoryScreen() {
           label="Completed"
           isActive={filterStatus === "completed"}
           onPress={() => setFilterStatus("completed")}
+        />
+      </View>
+
+      {/* Privacy Level Filters */}
+      <View className="flex-row mt-3">
+        <FilterChip
+          label="All Privacy"
+          isActive={filterPrivacy === "all"}
+          onPress={() => setFilterPrivacy("all")}
+        />
+        <FilterChip
+          label="🛡️ Private"
+          isActive={filterPrivacy === "shielded"}
+          onPress={() => setFilterPrivacy("shielded")}
+        />
+        <FilterChip
+          label="🔒 Compliant"
+          isActive={filterPrivacy === "compliant"}
+          onPress={() => setFilterPrivacy("compliant")}
         />
       </View>
 

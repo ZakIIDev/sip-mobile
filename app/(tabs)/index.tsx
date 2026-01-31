@@ -33,6 +33,8 @@ import {
   ListChecks,
   ShieldStar,
   Clock,
+  Lock,
+  Eye,
 } from "phosphor-react-native"
 import type { IconProps } from "phosphor-react-native"
 import type { ComponentType } from "react"
@@ -153,6 +155,20 @@ interface TransactionRowProps {
 function TransactionRow({ payment, onPress }: TransactionRowProps) {
   const isReceive = payment.type === "receive"
 
+  // Privacy level indicator
+  const PrivacyIcon =
+    payment.privacyLevel === "compliant"
+      ? Lock
+      : payment.privacyLevel === "transparent"
+      ? Eye
+      : ShieldCheck
+  const privacyColor =
+    payment.privacyLevel === "compliant"
+      ? "#22d3ee" // cyan
+      : payment.privacyLevel === "transparent"
+      ? "#71717a" // gray
+      : "#a78bfa" // purple
+
   return (
     <TouchableOpacity
       className="flex-row items-center py-3 border-b border-dark-900"
@@ -173,9 +189,13 @@ function TransactionRow({ payment, onPress }: TransactionRowProps) {
         <Text className="text-white font-medium">
           {isReceive ? "Received" : "Sent"}
         </Text>
-        <Text className="text-dark-500 text-sm">
-          {formatTimeAgo(payment.timestamp)}
-        </Text>
+        <View className="flex-row items-center gap-1">
+          <Text className="text-dark-500 text-sm">
+            {formatTimeAgo(payment.timestamp)}
+          </Text>
+          <Text className="text-dark-600">•</Text>
+          <PrivacyIcon size={12} weight="fill" color={privacyColor} />
+        </View>
       </View>
       <View className="items-end">
         <Text
