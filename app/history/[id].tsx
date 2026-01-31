@@ -128,8 +128,11 @@ export default function TransactionDetailScreen() {
   const privacyInfo = getPrivacyInfo(payment.privacyLevel)
 
   const handleCopyTxHash = async () => {
-    if (payment.txHash) {
-      await Clipboard.setStringAsync(payment.txHash)
+    // For claimed payments, copy claimTxHash (actual tx signature)
+    // For sent payments, copy txHash
+    const txHash = payment.claimed ? payment.claimTxHash : payment.txHash
+    if (txHash) {
+      await Clipboard.setStringAsync(txHash)
       addToast({
         type: "success",
         title: "Copied!",
@@ -148,18 +151,22 @@ export default function TransactionDetailScreen() {
   }
 
   const handleViewOnExplorer = () => {
-    if (payment.txHash) {
-      const explorerUrl = getExplorerTxUrl(payment.txHash, network, defaultExplorer)
+    // For claimed payments, use claimTxHash (actual tx signature)
+    // For sent payments, use txHash
+    const txHash = payment.claimed ? payment.claimTxHash : payment.txHash
+    if (txHash) {
+      const explorerUrl = getExplorerTxUrl(txHash, network, defaultExplorer)
       Linking.openURL(explorerUrl)
     }
   }
 
   const handleShare = async () => {
+    const txHash = payment.claimed ? payment.claimTxHash : payment.txHash
     const message = [
       `SIP ${isReceive ? "Received" : "Sent"} ${payment.amount} ${payment.token}`,
       `Status: ${statusInfo.label}`,
       `Privacy: ${privacyInfo.label}`,
-      payment.txHash ? `TX: ${payment.txHash}` : null,
+      txHash ? `TX: ${txHash}` : null,
     ]
       .filter(Boolean)
       .join("\n")
@@ -297,7 +304,8 @@ export default function TransactionDetailScreen() {
           )}
 
           {/* Transaction Hash */}
-          {payment.txHash && (
+          {/* For claimed payments, show claimTxHash; for sent, show txHash */}
+          {(payment.claimed ? payment.claimTxHash : payment.txHash) && (
             <TouchableOpacity
               className="p-4"
               onPress={handleCopyTxHash}
@@ -310,7 +318,7 @@ export default function TransactionDetailScreen() {
                 className="text-white font-mono text-sm mt-2"
                 numberOfLines={2}
               >
-                {payment.txHash}
+                {payment.claimed ? payment.claimTxHash : payment.txHash}
               </Text>
             </TouchableOpacity>
           )}
@@ -341,7 +349,7 @@ export default function TransactionDetailScreen() {
           )}
 
           {/* View on Explorer */}
-          {payment.txHash && (
+          {(payment.claimed ? payment.claimTxHash : payment.txHash) && (
             <Button
               fullWidth
               variant="secondary"
