@@ -242,7 +242,7 @@ function hexToBytes(hex: string): Uint8Array {
 
 export function useScanPayments(): UseScanPaymentsReturn {
   const { isConnected } = useWalletStore()
-  const { network } = useSettingsStore()
+  const { network, defaultPrivacyLevel } = useSettingsStore()
   const {
     payments,
     addPayment,
@@ -470,6 +470,9 @@ export function useScanPayments(): UseScanPaymentsReturn {
               const claimableStealthAddress = `sip:solana:${ephemeralHex}:${stealthRecipientBase58}`
 
               // Create payment record with keyId for archival claim support (#72)
+              // Use the user's default privacy level setting for display purposes
+              // Note: On-chain, all stealth transfers have the same privacy guarantees;
+              // the "compliant" vs "shielded" distinction is about viewing key disclosure intent
               const payment: PaymentRecord = {
                 id: `payment_${Date.now()}_${result.found}`,
                 type: "receive",
@@ -479,7 +482,7 @@ export function useScanPayments(): UseScanPaymentsReturn {
                 stealthAddress: claimableStealthAddress,
                 txHash: record.pubkey.toBase58(), // Use PDA as reference
                 timestamp: Number(record.timestamp) * 1000, // Convert to ms
-                privacyLevel: "shielded",
+                privacyLevel: defaultPrivacyLevel,
                 claimed: false,
                 keyId: activeKeyId ?? undefined, // Link to active key set for claiming
                 network, // Track which network this payment was made on
