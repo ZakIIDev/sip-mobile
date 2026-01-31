@@ -87,3 +87,7 @@ export type { UsePrivacyProviderReturn } from "./usePrivacyProvider"
 // Background Scan hooks
 export { useBackgroundScan } from "./useBackgroundScan"
 export type { UseBackgroundScanReturn } from "./useBackgroundScan"
+
+// Demo hooks (for onboarding)
+export { useStealthDemo } from "./useStealthDemo"
+export type { DemoStealthAddress, UseStealthDemoReturn } from "./useStealthDemo"

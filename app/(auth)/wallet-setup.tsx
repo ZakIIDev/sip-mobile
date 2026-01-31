@@ -10,11 +10,12 @@
  * No external wallet connection needed.
  */
 
-import { View, Text, TouchableOpacity, Platform } from "react-native"
+import { View, Text, TouchableOpacity, Platform, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, Href } from "expo-router"
 import { useNativeWallet, useSeedVault } from "@/hooks"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState, useRef } from "react"
+import { useSettingsStore } from "@/stores/settings"
 import type { Icon as PhosphorIcon } from "phosphor-react-native"
 import {
   Sparkle,
@@ -67,6 +68,29 @@ const SEED_VAULT_OPTION: SetupOption = {
 export default function WalletSetupScreen() {
   const { wallet, isInitialized } = useNativeWallet()
   const { isAvailable: seedVaultAvailable, isInitialized: seedVaultInitialized } = useSeedVault()
+  const resetOnboarding = useSettingsStore((s) => s.resetOnboarding)
+
+  // Dev-only: tap title 5 times to reset onboarding
+  const [tapCount, setTapCount] = useState(0)
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleTitleTap = () => {
+    setTapCount((prev) => prev + 1)
+
+    // Reset tap count after 2 seconds of no taps
+    if (tapTimer.current) clearTimeout(tapTimer.current)
+    tapTimer.current = setTimeout(() => setTapCount(0), 2000)
+
+    if (tapCount + 1 >= 5) {
+      resetOnboarding()
+      setTapCount(0)
+      Alert.alert(
+        "Onboarding Reset",
+        "Reload app to see onboarding again",
+        [{ text: "OK" }]
+      )
+    }
+  }
 
   // Build setup options based on device capabilities
   const setupOptions = useMemo(() => {
@@ -99,14 +123,35 @@ export default function WalletSetupScreen() {
 
   return (
     <SafeAreaView testID="welcome-screen" className="flex-1 bg-dark-950">
-      {/* Header */}
+      {/* Header - Tap title 5x to reset onboarding (dev feature) */}
       <View className="px-6 pt-8 pb-4">
-        <Text className="text-3xl font-bold text-white mb-2">
-          Welcome to SIP Privacy
-        </Text>
-        <Text className="text-lg text-dark-400">
-          Set up your privacy wallet to get started
-        </Text>
+        <TouchableOpacity onPress={handleTitleTap} activeOpacity={1}>
+          <Text className="text-3xl font-bold text-white mb-2">
+            Welcome to SIP Privacy
+          </Text>
+        </TouchableOpacity>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-lg text-dark-400">
+            Set up your privacy wallet to get started
+          </Text>
+          {/* DEV: Visible reset button - remove in production */}
+          {__DEV__ && (
+            <TouchableOpacity
+              onPress={() => {
+                resetOnboarding()
+                Alert.alert(
+                  "Onboarding Reset",
+                  "Reload app to see onboarding again",
+                  [{ text: "OK" }]
+                )
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              className="bg-warning-600 px-2 py-1 rounded"
+            >
+              <Text className="text-white text-xs">Reset</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Options */}
