@@ -109,6 +109,9 @@
   "pnpm": {
     "overrides": {
       "@expo/metro-runtime": "5.0.4"
+    },
+    "patchedDependencies": {
+      "@solana-mobile/seed-vault-lib": "patches/@solana-mobile__seed-vault-lib.patch"
     }
   }
 }

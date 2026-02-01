@@ -7,6 +7,11 @@ settings:
 overrides:
   '@expo/metro-runtime': 5.0.4
 
+patchedDependencies:
+  '@solana-mobile/seed-vault-lib':
+    hash: 326d8962676ccbe19bfd8feb17ff5b051ccf55686b9486f01828952f62ea602d
+    path: patches/@solana-mobile__seed-vault-lib.patch
+
 importers:
 
   .:
@@ -58,7 +63,7 @@ importers:
         version: 2.2.5(@solana/wallet-adapter-base@0.9.27(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)))(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(react-native@0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(typescript@5.9.3)
       '@solana-mobile/seed-vault-lib':
         specifier: ^0.4.0
-        version: 0.4.0(react-native@0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))
+        version: 0.4.0(patch_hash=326d8962676ccbe19bfd8feb17ff5b051ccf55686b9486f01828952f62ea602d)(react-native@0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))
       '@solana/web3.js':
         specifier: ^1.98.4
         version: 1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
@@ -8751,7 +8756,7 @@ snapshots:
       - react
       - typescript
 
-  '@solana-mobile/seed-vault-lib@0.4.0(react-native@0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))':
+  '@solana-mobile/seed-vault-lib@0.4.0(patch_hash=326d8962676ccbe19bfd8feb17ff5b051ccf55686b9486f01828952f62ea602d)(react-native@0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10))':
     dependencies:
       react-native: 0.81.5(@babel/core@7.28.6)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@5.0.10)
 
