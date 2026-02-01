@@ -11,7 +11,8 @@ export * from "./types"
 
 // Adapters
 export { SipNativeAdapter, createSipNativeAdapter } from "./sip-native"
-export { PrivacyCashAdapter, createPrivacyCashAdapter } from "./privacy-cash"
+// Privacy Cash disabled - privacycash SDK uses import.meta (incompatible with Hermes)
+// export { PrivacyCashAdapter, createPrivacyCashAdapter } from "./privacy-cash"
 export { ShadowWireAdapter, createShadowWireAdapter } from "./shadowwire"
 export { MagicBlockAdapter, createMagicBlockAdapter } from "./magicblock"
 export { ArciumAdapter, createArciumAdapter } from "./arcium"
